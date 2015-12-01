@@ -1,0 +1,14 @@
+# Request
+
+string spec
+Choice[] choices
+
+---
+
+# Result
+
+Result[] results
+
+---
+
+# Feedback
