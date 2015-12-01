@@ -7,13 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
 )
 
-# catkin_python_setup()
-
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES hmi_server
-#  CATKIN_DEPENDS actionlib hmi_msgs rospy
-#  DEPENDS system_lib
+ CATKIN_DEPENDS actionlib hmi_msgs rospy
 )
 
 #############
