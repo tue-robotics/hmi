@@ -5,6 +5,7 @@ from hmi_msgs.msg import HumanInteractionAction, HumanInteractionResult, Result
 from actionlib import SimpleActionServer
 from random import choice as choose
 
+
 class HMIServer(object):
 
     def __init__(self, name):
