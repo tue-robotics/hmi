@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hmi_server)
 
+catkin_python_setup()
+
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   hmi_msgs
