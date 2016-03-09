@@ -1,0 +1,16 @@
+# Request
+
+string      description # for visualization of the query
+string      spec
+Choice[]    choices
+
+---
+
+# Result
+
+string      raw_result # If you want to do the parsing yourself
+Result[]    results
+
+---
+
+# Feedback

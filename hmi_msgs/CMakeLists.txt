@@ -14,7 +14,7 @@ add_message_files(
 
 add_action_files(
   FILES
-    HumanInteraction.action
+    Query.action
 )
 
 generate_messages(
