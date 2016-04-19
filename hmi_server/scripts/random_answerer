@@ -4,24 +4,12 @@ import rospy
 from hmi_msgs.msg import HumanInteractionAction, HumanInteractionResult, Result
 from actionlib import SimpleActionServer
 from random import choice as choose
+from hmi_server.abstract_client import AbstractHMIServer
 
 
-class HMIServer(object):
+class HMIServer(AbstractHMIServer):
 
-    def __init__(self, name):
-        self._action_name = name
-        self.server = SimpleActionServer(name, HumanInteractionAction,
-                                         execute_cb=self.execute_cb, auto_start=False)
-        self.server.start()
-        rospy.loginfo('%s started', name)
-
-    def execute_cb(self, goal):
-        self.server.set_succeeded(
-            self.determine_answer(question=goal.question,
-                                  spec=goal.spec,
-                                  choices=goal.choices))
-
-    def determine_answer(self, question, spec, choices):
+    def _determine_answer(self, question, spec, choices):
         rospy.loginfo('I got a question: %s', question)
         rospy.loginfo('This is the spec: %s', spec)
 
@@ -36,7 +24,8 @@ class HMIServer(object):
 
         return HumanInteractionResult(results=results)
 
+
 if __name__ == '__main__':
-    rospy.init_node('random_anwerer')
+    rospy.init_node('random_answerer')
     HMIServer(rospy.get_name())
     rospy.spin()
