@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from hmi_msgs.msg import QueryAction, QueryGoal
+from hmi_msgs.msg import QueryAction, QueryGoal, Choice
 from actionlib import SimpleActionClient
 
 class Api(object):
@@ -17,7 +17,22 @@ class Api(object):
 		'''
 		Perform a HMI query, returns a dict of {choicename: value}
 		'''
-		pass
+		rospy.loginfo('Question: %s, spec: %s', description, spec)
+		choices = [Choice(id=choice,values=values) for (choice, values) in choices.items()]
+
+		goal = QueryGoal(description, spec, choices)
+		self._client.send_goal_and_wait(goal, execute_timeout=rospy.Duration(10), preempt_timeout=rospy.Duration(1))
+		answer = self._client.get_result()
+
+		result = {}
+		for choice in answer.results:
+			if choice.id in result:
+				rospy.logwarn('duplicate key "%s" in answer', choice.id)
+			else:
+				result[choice.id] = choice.value
+
+		rospy.loginfo('Answer: %s', result)
+		return result
 
 	def query_raw(self, description, spec):
 		'''

@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+
+import argparse
+from hmi_server.api import Api
+import rospy
+
+parser = argparse.ArgumentParser()
+parser.add_argument('server', help='Actionlib server')
+
+args = parser.parse_args()
+server = args.server
+
+rospy.init_node('test_query_raw', anonymous=True)
+api = Api(server)
+api.query('Say apple or banana', '<name>', {'name': ["apple", "banana"]})
