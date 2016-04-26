@@ -5,13 +5,13 @@ A HMI server that always responds with an empty result
 '''
 
 import rospy
-from hmi_msgs.msg import HumanInteractionAction, HumanInteractionResult, Result
+from hmi_msgs.msg import QueryAction, QueryResult, Result
 from actionlib import SimpleActionServer
 from hmi_server.abstract_client import AbstractHMIServer
 
 class HMIServer(AbstractHMIServer):
     def _determine_answer(self, question, spec, choices):
-        return HumanInteractionResult()
+        return QueryResult()
 
 if __name__ == '__main__':
 	rospy.init_node('noop_server')
