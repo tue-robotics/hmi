@@ -44,7 +44,7 @@ class AbstractHMIServer(object):
         self.server = SimpleActionServer(name, QueryAction,
                                          execute_cb=self._execute_cb, auto_start=False)
         self.server.start()
-        rospy.loginfo('%s started', name)
+        rospy.loginfo('HMI server started on "%s"', name)
 
     def _execute_cb(self, goal):
 
