@@ -10,7 +10,7 @@ from actionlib import SimpleActionServer
 from hmi_server.abstract_client import AbstractHMIServer
 
 class HMIServer(AbstractHMIServer):
-    def _determine_answer(self, question, spec, choices):
+    def _determine_answer(self, description, spec, choices):
         return QueryResult()
 
 if __name__ == '__main__':
