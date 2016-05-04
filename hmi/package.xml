@@ -12,7 +12,6 @@
 
   <run_depend>hmi_msgs</run_depend>
   <run_depend>hmi_server</run_depend>
-  <run_depend>hmi_zbar_server</run_depend>
 
   <export>
     <metapackage/>
