@@ -2,27 +2,7 @@
 import rospy
 from hmi_msgs.msg import QueryAction, QueryGoal, Choice
 from actionlib import SimpleActionClient, SimpleGoalState, GoalStatus
-
-
-def queryToROS(description, spec, choices):
-    '''Convert a query call to a ROS message'''
-
-    # convert the dict to an array of Choices
-    choices = [Choice(id=choice,values=values) for (choice, values) in choices.items()]
-    return QueryGoal(description, spec, choices)
-
-
-def resultFromROS(answer):
-    '''Convert a ROS result to Python result'''
-
-    # convert the array of Choices back to a dict
-    result = {}
-    for choice in answer.results:
-        if choice.id in result:
-            rospy.logwarn('duplicate key "%s" in answer', choice.id)
-        else:
-            result[choice.id] = choice.value
-    return result
+from hmi_server.abstract_server import queryToROS, resultFromROS
 
 class Api(object):
 
