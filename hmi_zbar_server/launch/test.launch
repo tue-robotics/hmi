@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <!-- Start kinect -->
+    <node pkg="kinect_driver" type="kinect_driver" name="kinect_driver" output="screen" />
+
+    <!-- Start qr_detector node -->
+    <node pkg="qr_detector_zbar" type="qr_detector_zbar_node" name="qr_detector_zbar" output="screen" />
+
+    <!-- Start HMI Server node -->
+    <node pkg="hmi_zbar_server" type="zbar_server.py" name="hmi_zbar_server" output="screen" />
+
+</launch>
