@@ -46,6 +46,9 @@ class HMIResult(object):
     def from_ros(self):
         raise NotImplementedError()
 
+    def __repr__(self):
+        return "%s(raw_result=%r, results=%r)" % (self.__class__.__name__, self.raw_result, self.results)
+
 class AbstractHMIServer(object):
     """
     Abstract base class for a hmi client
