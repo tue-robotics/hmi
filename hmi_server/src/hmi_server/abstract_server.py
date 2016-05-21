@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import traceback
 from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, Choice
 from actionlib import SimpleActionServer
 from abc import ABCMeta, abstractmethod
@@ -105,7 +106,11 @@ class AbstractHMIServer(object):
                                            choices=choices,
                                            is_preempt_requested=self._server.is_preempt_requested)
         except Exception as e:
-            rospy.logwarn('_determine_answer raised an exception: %s', e)
+            # rospy.logwarn('_determine_answer raised an exception: %s', e)
+            # import pdb; pdb.set_trace()
+            tb = traceback.format_exc()
+            rospy.logerr('_determine_answer raised an exception: %s' % tb)
+
             self._server.set_aborted()
         else:
             # we've got a result or a cancel
