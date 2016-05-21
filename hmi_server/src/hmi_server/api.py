@@ -3,6 +3,7 @@ import rospy
 from hmi_msgs.msg import QueryAction, QueryGoal, Choice
 from actionlib import SimpleActionClient, SimpleGoalState, GoalStatus
 from hmi_server.abstract_server import queryToROS, resultFromROS
+from dragonfly_speech_recognition.srv import GetSpeechResponse
 
 class Api(object):
 
@@ -30,7 +31,7 @@ class Api(object):
                 rospy.loginfo("Preempt finished within specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
             else:
                 rospy.loginfo("Preempt didn't finish specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
-        
+
         state = self._client.get_state()
         if state != GoalStatus.SUCCEEDED:
             raise RuntimeError("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
@@ -48,6 +49,9 @@ class Api(object):
 
         rospy.logdebug('Answer: %s', answer)
         result = resultFromROS(answer)
+
+        answer.result = answer.raw_result
+        answer.choices = result
         rospy.loginfo('Result: %s', result)
 
         return result
@@ -63,6 +67,25 @@ class Api(object):
 
         rospy.logdebug('Answer: %s', answer)
         result = answer.raw_result
+        rospy.loginfo('Result: %s', result)
+
+        return result
+
+    def old_query(self, spec, choices, timeout):
+        '''
+        Convert old queryies to a HMI query
+        '''
+        rospy.loginfo('spec: %s', spec)
+
+        self._send_query('', spec, choices)
+        answer = self._wait_for_result_and_get()
+
+        rospy.logdebug('Answer: %s', answer)
+        choices = resultFromROS(answer)
+
+        result = GetSpeechResponse(result=answer.raw_result)
+        result.choices = choices
+
         rospy.loginfo('Result: %s', result)
 
         return result
