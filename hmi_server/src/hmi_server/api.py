@@ -50,8 +50,6 @@ class Api(object):
         rospy.logdebug('Answer: %s', answer)
         result = resultFromROS(answer)
 
-        answer.result = answer.raw_result
-        answer.choices = result
         rospy.loginfo('Result: %s', result)
 
         return result
