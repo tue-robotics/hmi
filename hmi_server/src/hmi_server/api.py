@@ -5,6 +5,11 @@ from actionlib import SimpleActionClient, SimpleGoalState, GoalStatus
 from hmi_server.abstract_server import queryToROS, resultFromROS
 from dragonfly_speech_recognition.srv import GetSpeechResponse
 
+
+class TimeoutException(Exception):
+    pass
+
+
 class Api(object):
 
     def __init__(self, name):
@@ -19,8 +24,8 @@ class Api(object):
         goal = queryToROS(description, spec, choices)
         state = self._client.send_goal(goal)
 
-    def _wait_for_result_and_get(self):
-        execute_timeout = rospy.Duration(10)
+    def _wait_for_result_and_get(self, timeout=None):
+        execute_timeout = rospy.Duration(timeout) if timeout else rospy.Duration(10)
         preempt_timeout = rospy.Duration(1)
 
         if not self._client.wait_for_result(execute_timeout):
@@ -34,7 +39,7 @@ class Api(object):
 
         state = self._client.get_state()
         if state != GoalStatus.SUCCEEDED:
-            raise RuntimeError("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
+            raise TimeoutException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
         return self._client.get_result()
 
@@ -69,14 +74,17 @@ class Api(object):
 
         return result
 
-    def old_query(self, spec, choices, timeout):
+    def old_query(self, spec, choices, timeout=10):
         '''
         Convert old queryies to a HMI query
         '''
         rospy.loginfo('spec: %s', spec)
 
         self._send_query('', spec, choices)
-        answer = self._wait_for_result_and_get()
+        try:
+            answer = self._wait_for_result_and_get(timeout=timeout)
+        except TimeoutException:
+            return None
 
         rospy.logdebug('Answer: %s', answer)
         choices = resultFromROS(answer)
