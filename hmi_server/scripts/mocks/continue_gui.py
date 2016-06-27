@@ -92,31 +92,26 @@ class UpdateThread(QtCore.QThread):
         while not rospy.is_shutdown():
             # question, buttons = self._server.update(self._current_text)
             res = self._server.update(current_text=self._current_text, submit=self._submit)
-            description = res.description
-            spec = res.spec
-            key = res.key
-            buttons = res.buttons
-            valid = res.valid
 
             # if question and question != self.question:
-            if description != self._description:
-                self.description.emit(description)
-                self._description = description
-            if key != self._key:
-                self.key.emit(key)
-                self._key = key
-            if spec != self._spec:
-                self.spec.emit(spec)
-                self._spec = spec
+            if res.description != self._description:
+                self.description.emit(res.description)
+                self._description = res.description
+            if res.key != self._key:
+                self.key.emit(res.key)
+                self._key = res.key
+            if res.spec != self._spec:
+                self.spec.emit(res.spec)
+                self._spec = res.spec
             buttonstr = ""
-            for b in buttons:
+            for b in res.buttons:
                 buttonstr += (b + ";")
             if buttonstr != self._buttons:
                 self.buttons.emit(buttonstr)
                 self._buttons = buttonstr
-            if valid != self._valid:
-                self.valid.emit(valid)
-                self._valid = valid
+            if res.valid != self._valid:
+                self.valid.emit(res.valid)
+                self._valid = res.valid
             self._submit = False  # Reset submit button
             r.sleep()
 
@@ -248,9 +243,9 @@ class HMIServerGUIInterface(AbstractHMIServer):
             k = self._choices.keys()[self._simple_question_index]
             v = self._choices[k]
 
-            # ToDo: check if answered
-            if current_text in v:
-                self._results_dict[k] = current_text
+            if submit:
+                self._results_dict[k] = self._current_text
+                self._current_text = ""
                 self._simple_question_index += 1
                 if len(self._choices) == self._simple_question_index:
                     self._result = HMIResult(results=self._results_dict)
@@ -259,8 +254,14 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 else:
                     return UpdateResult(description=self._description, spec=self._spec, key="", buttons=[],
                                         isvalid=False)
-
-            return UpdateResult(description=self._description, spec=self._spec, key=k, buttons=v, isvalid=False)
+            else:
+                if current_text in v:
+                    buttons = []
+                    self._current_text = current_text  # Store the current text
+                else:
+                    buttons = v
+                return UpdateResult(description=self._description, spec=self._spec, key=k, buttons=buttons,
+                                    isvalid=(current_text in v))
 
         # If grammar: check parser
         if self._mode == GuiMode.USE_GRAMMAR:
@@ -330,6 +331,17 @@ class ContinueGui(QtGui.QWidget):
         self.submit_button.setText("Submit")
         self.submit_button.setEnabled(False)
 
+        # Add the clear button
+        self.clear_button = QtGui.QPushButton(self)
+        self.clear_button.setText("Clear")
+
+        # Submit/clear button layout
+        self.submit_clear_button_layout = QtGui.QVBoxLayout()
+        self.submit_clear_button_layout.addWidget(self.submit_button)
+        self.submit_clear_button_layout.addWidget(self.clear_button)
+        self.submit_clear_button_widget = QtGui.QWidget()
+        self.submit_clear_button_widget.setLayout(self.submit_clear_button_layout)
+
         # Add the QButtonGroup
         # self.option_buttons = QtGui.QButtonGroup(self) (ToDo: how can I do this nicely???)
         # self.button_layout = QtGui.QVBoxLayout()
@@ -341,7 +353,7 @@ class ContinueGui(QtGui.QWidget):
         # Top layout
         self._top_layout = QtGui.QHBoxLayout(self)
         self._top_layout.addWidget(self.textbox)
-        self._top_layout.addWidget(self.submit_button)
+        self._top_layout.addWidget(self.submit_clear_button_widget)
         self._top_widget = QtGui.QWidget()
         self._top_widget.setLayout(self._top_layout)
         self._top_widget.setMaximumHeight(100)
@@ -371,9 +383,14 @@ class ContinueGui(QtGui.QWidget):
         self.update_thread.valid.connect(self.valid_callback)
         self.current_text.connect(self.update_thread.set_text)
         self.submit_button.clicked.connect(self.update_thread.submit)
+        self.submit_button.clicked.connect(self.clear_text)
+        self.clear_button.clicked.connect(self.clear_text)
         self.update_thread.start()
 
         self.show()
+
+    def _clear_clicked(self):
+        print "bla"
 
     def _text_changed(self):
         """ Callback function if text in the textbox has changed. Gets the text and emits
@@ -423,8 +440,6 @@ class ContinueGui(QtGui.QWidget):
         :param buttons: QString containing the text of the buttons to add, separated by ';'
         """
         self.clear_buttons()
-        if buttons == "":
-            self.clear_text()
 
         for b in str(buttons).split(';'):
             self.add_button(b)
