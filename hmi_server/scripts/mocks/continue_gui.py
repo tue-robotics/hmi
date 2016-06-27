@@ -18,22 +18,41 @@ from hmi_server.abstract_server import HMIResult, AbstractHMIServer
 
 
 def get_word_options(text):
-    """ Returns the possible options that can follow on the provided text
+    """ Returns the possible options that can follow on the provided text.
+    Dirty assumption: there is ALWAYS at least one possibility (at least: 'and')
 
     :param text: string with the currently provided text
     :return: list with possibilities
     """
-    print "Text: '{0}'".format(text)
-    if text == "":
+    # ToDo: this is a dummy function
+    s = text.split(' ')
+    if text == "" or s[-1] == 'and':
         return ['go', 'move', 'drive', 'navigate']
-    if text in ['go', 'move', 'drive', 'navigate']:
+    if s[-1] in ['go', 'move', 'drive', 'navigate']:
         return ['to']
-    if text in ['go to', 'move to', 'drive to', 'navigate to']:
+    if s[-1] == "to":
         return ['the']
-    if text in ['go to the', 'move to the', 'drive to the', 'navigate to the']:
+    if s[-1] == 'the':
         return ['livingroom', 'kitchen', 'bedroom', 'hallway']
     else:
-        return []
+        return ['and']
+
+
+# -----------------------------------------------------------------------------
+
+
+def is_valid(text):
+    """ Checks if the current text is valid as an assignment for the robot
+
+    :param text: current text
+    :return: bool whether this is valid
+    """
+    # ToDo: this is a dummy function
+    s = text.split(' ')
+    if len(s) in [4, 9, 14, 19]:
+        return True
+    else:
+        return False
 
 
 # -----------------------------------------------------------------------------
@@ -45,6 +64,7 @@ class UpdateThread(QtCore.QThread):
     spec = QtCore.pyqtSignal(['QString'])
     key = QtCore.pyqtSignal(['QString'])
     buttons = QtCore.pyqtSignal(['QString'])  # String, buttons separated by ;
+    valid = QtCore.pyqtSignal([bool])
 
     def __init__(self, gui, server):
         """ Constructor
@@ -61,6 +81,8 @@ class UpdateThread(QtCore.QThread):
         self._spec = ""
         self._buttons = ""
         self._key = ""
+        self._valid = False
+        self._submit = False
         self._current_text = ""
 
     def run(self):
@@ -69,11 +91,12 @@ class UpdateThread(QtCore.QThread):
         r = rospy.Rate(5)
         while not rospy.is_shutdown():
             # question, buttons = self._server.update(self._current_text)
-            res = self._server.update(self._current_text)
+            res = self._server.update(current_text=self._current_text, submit=self._submit)
             description = res.description
             spec = res.spec
             key = res.key
             buttons = res.buttons
+            valid = res.valid
 
             # if question and question != self.question:
             if description != self._description:
@@ -85,19 +108,17 @@ class UpdateThread(QtCore.QThread):
             if spec != self._spec:
                 self.spec.emit(spec)
                 self._spec = spec
-            # if len(buttons) > 0:
-            #     buttonstr = ""
-            #     for b in buttons:
-            #         buttonstr += (b + ";")
-            #     if buttonstr != self._buttons:
-            #         self.buttons.emit(buttonstr)
-            #         self._buttons = buttonstr
             buttonstr = ""
             for b in buttons:
                 buttonstr += (b + ";")
             if buttonstr != self._buttons:
                 self.buttons.emit(buttonstr)
                 self._buttons = buttonstr
+            if valid != self._valid:
+                self.valid.emit(valid)
+                print "Emitting valid: {0}".format(valid)
+                self._valid = valid
+            self._submit = False  # Reset submit button
             r.sleep()
 
     def set_text(self, text):
@@ -105,6 +126,11 @@ class UpdateThread(QtCore.QThread):
         :param text: text to set
         """
         self._current_text = str(text)
+
+    def submit(self):
+        """ Slot for the submit button of the GUI
+        """
+        self._submit = True
 
 
 # -----------------------------------------------------------------------------
@@ -122,18 +148,20 @@ class GuiMode(object):
 
 class UpdateResult(object):
     """ Return value of the update function of the HMIServerGuiInterface """
-    def __init__(self, description="", spec="", key="", buttons=[]):
+    def __init__(self, description="", spec="", key="", buttons=[], isvalid=False):
         """ Constructor
 
         :param description: asked question ("Which <fruit> would you like")
         :param spec: spec ("I would like <fruit>")
         :param key: part of the answer we are answering  ("<fruit>")
         :param buttons: possible buttons to click (["banana", "apple"])
+        :param isvalid: bool indicating whether the current text is valid
         """
         self.description = description
         self.spec = spec
         self.key = key
         self.buttons = buttons
+        self.valid = isvalid
 
     def __repr__(self):
         return "Description: {0}\nSpec: {1}\nKey: {2}\nButtons: {3}".format(self.description, self.spec,
@@ -167,6 +195,9 @@ class HMIServerGUIInterface(AbstractHMIServer):
         self._simple_question_index = 0
         self._results_dict = {}
 
+        # For grammars
+        self._current_text = ""
+
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
         """
         Sets some members and blocks until we can either an answer is created
@@ -188,8 +219,6 @@ class HMIServerGUIInterface(AbstractHMIServer):
         else:
             self._mode = GuiMode.USE_GRAMMAR
 
-
-        #####
         print "Yeah, received a request"
 
         r = rospy.Rate(5.0)
@@ -204,16 +233,17 @@ class HMIServerGUIInterface(AbstractHMIServer):
         print "Yeah, we're done, result: {0}".format(self._results_dict)
         return self._result
 
-    def update(self, current_text):
+    def update(self, current_text, submit=False):
         """ Continuously updates
 
         :param current_text: current text of the GUI textbox
+        :param submit: bool indicating whether the submit button has been pressed
         :return: tuple with a question (optionally) and a list with the possible words. If the list is empty,
         there is no current goal any more
         """
         # If idle: return
         if self._mode in [GuiMode.IDLE, GuiMode.RESULT_PENDING]:
-            return UpdateResult("", "", "", [])
+            return UpdateResult(description="", spec="", key="", buttons=[], isvalid=False)
 
         # If simple question: check if answered
         if self._mode == GuiMode.SIMPLE_QUESTION:
@@ -227,19 +257,28 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 if len(self._choices) == self._simple_question_index:
                     self._result = HMIResult(results=self._results_dict)
                     self._mode = GuiMode.RESULT_PENDING
-                    return UpdateResult("", "", "", [])
+                    return UpdateResult(description="", spec="", key="", buttons=[], isvalid=False)
                 else:
-                    return UpdateResult(self._description, self._spec, "", [])
+                    return UpdateResult(description=self._description, spec=self._spec, key="", buttons=[],
+                                        isvalid=False)
 
-            return UpdateResult(self._description, self._spec, k, v)
+            return UpdateResult(description=self._description, spec=self._spec, key=k, buttons=v, isvalid=False)
 
         # If grammar: check parser
         if self._mode == GuiMode.USE_GRAMMAR:
-            options = get_word_options(current_text)
-            print "Options: {0}".format(options)
-            return UpdateResult(self._description, "", "", options)
+            if submit:
+                self._result = HMIResult(self._current_text)  # The stored value is returned to make sure the
+                # text did not change between the check and clicking the 'Submit' button
+                self._mode = GuiMode.RESULT_PENDING
+                return UpdateResult(description=self._description, spec=self._spec, key="", buttons=[],
+                                    isvalid=False)
+            else:
+                options = get_word_options(current_text)
+                valid = is_valid(current_text)
+                self._current_text = current_text  # Store the current text
+                return UpdateResult(description=self._description, spec="", key="", buttons=options, isvalid=valid)
 
-        return UpdateResult("", "", "", [])
+        return UpdateResult(description="", spec="", key="", buttons=[], isvalid=False)
 
 
 # -----------------------------------------------------------------------------
@@ -291,7 +330,7 @@ class ContinueGui(QtGui.QWidget):
         # Add the submit button
         self.submit_button = QtGui.QPushButton(self)
         self.submit_button.setText("Submit")
-        # ToDo: add callback
+        self.submit_button.setEnabled(False)
 
         # Add the QButtonGroup
         # self.option_buttons = QtGui.QButtonGroup(self) (ToDo: how can I do this nicely???)
@@ -330,7 +369,9 @@ class ContinueGui(QtGui.QWidget):
         self.update_thread.description.connect(self.description_callback)
         self.update_thread.spec.connect(self.spec_callback)
         self.update_thread.key.connect(self.key_callback)
+        self.update_thread.valid.connect(self.valid_callback)
         self.current_text.connect(self.update_thread.set_text)
+        self.submit_button.clicked.connect(self.update_thread.submit)
         self.update_thread.start()
 
         self.show()
@@ -360,6 +401,12 @@ class ContinueGui(QtGui.QWidget):
         :param text: string with text
         """
         self.spec_label.setText(text)
+
+    def valid_callback(self, valid):
+        """ Sets the 'Submit' button to enabled/disabled based on the valid
+        :param valid: bool whether this is valid
+        """
+        self.submit_button.setEnabled(valid)
 
     def add_to_textbox(self, text):
         """ Adds the text to the textbox, taking spaces into account
