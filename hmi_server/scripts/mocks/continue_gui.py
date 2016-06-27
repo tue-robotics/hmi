@@ -18,7 +18,8 @@ from hmi_server.abstract_server import HMIResult, AbstractHMIServer
 
 class UpdateThread(QtCore.QThread):
     """ Update thread """
-    question = QtCore.pyqtSignal(['QString'])
+    description = QtCore.pyqtSignal(['QString'])
+    spec = QtCore.pyqtSignal(['QString'])
     key = QtCore.pyqtSignal(['QString'])
     buttons = QtCore.pyqtSignal(['QString'])  # String, buttons separated by ;
 
@@ -33,7 +34,8 @@ class UpdateThread(QtCore.QThread):
         self._gui = gui
         self._server = server
 
-        self._question = ""
+        self._description = ""
+        self._spec = ""
         self._buttons = ""
         self._key = ""
         self._current_text = ""
@@ -45,17 +47,21 @@ class UpdateThread(QtCore.QThread):
         while not rospy.is_shutdown():
             # question, buttons = self._server.update(self._current_text)
             res = self._server.update(self._current_text)
-            question = res.question
+            description = res.description
+            spec = res.spec
             key = res.key
             buttons = res.buttons
 
             # if question and question != self.question:
+            if description != self._description:
+                self.description.emit(description)
+                self._description = description
             if key != self._key:
                 self.key.emit(key)
                 self._key = key
-            if question != self._question:
-                self.question.emit(question)
-                self._question = question
+            if spec != self._spec:
+                self.spec.emit(spec)
+                self._spec = spec
             # if len(buttons) > 0:
             #     buttonstr = ""
             #     for b in buttons:
@@ -93,19 +99,22 @@ class GuiMode(object):
 
 class UpdateResult(object):
     """ Return value of the update function of the HMIServerGuiInterface """
-    def __init__(self, question="", key="", buttons=[]):
+    def __init__(self, description="", spec="", key="", buttons=[]):
         """ Constructor
 
-        :param question: asked question ("Which <fruit> would you like")
+        :param description: asked question ("Which <fruit> would you like")
+        :param spec: spec ("I would like <fruit>")
         :param key: part of the answer we are answering  ("<fruit>")
         :param buttons: possible buttons to click (["banana", "apple"])
         """
-        self.question = question
+        self.description = description
+        self.spec = spec
         self.key = key
         self.buttons = buttons
 
     def __repr__(self):
-        return "Question: {0}\nKey: {1}\nButtons: {2}".format(self.question, self.key, self.buttons)
+        return "Description: {0}\nSpec: {1}\nKey: {2}\nButtons: {3}".format(self.description, self.spec,
+                                                                            self.key, self.buttons)
 
 
 # -----------------------------------------------------------------------------
@@ -181,7 +190,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         """
         # If idle: return
         if self._mode in [GuiMode.IDLE, GuiMode.RESULT_PENDING]:
-            return UpdateResult("", "", [])
+            return UpdateResult("", "", "", [])
 
         # If simple question: check if answered
         if self._mode == GuiMode.SIMPLE_QUESTION:
@@ -195,13 +204,13 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 if len(self._choices) == self._simple_question_index:
                     self._result = HMIResult(results=self._results_dict)
                     self._mode = GuiMode.RESULT_PENDING
-                    return UpdateResult("", "", [])
+                    return UpdateResult("", "", "", [])
                 else:
-                    return UpdateResult(self._spec, "", [])
+                    return UpdateResult(self._description, self._spec, "", [])
 
-            return UpdateResult(self._spec, k, v)
+            return UpdateResult(self._description, self._spec, k, v)
 
-        return UpdateResult("", "", [])
+        return UpdateResult("", "", "", [])
 
 
 # -----------------------------------------------------------------------------
@@ -235,9 +244,13 @@ class ContinueGui(QtGui.QWidget):
         self.move(300, 300)
         self.setWindowTitle('Continue GUI')
 
+        # Add the description box
+        self.description_label = QtGui.QLabel(self)
+        self.description_label.setMaximumHeight(100)
+
         # Add the question box
-        self.question_label = QtGui.QLabel(self)
-        self.question_label.setMaximumHeight(100)
+        self.spec_label = QtGui.QLabel(self)
+        self.spec_label.setMaximumHeight(100)
 
         # Add the key box
         self.key_label = QtGui.QLabel(self)
@@ -269,6 +282,8 @@ class ContinueGui(QtGui.QWidget):
 
         # Main layout
         self._main_layout = QtGui.QVBoxLayout(self)
+        self._main_layout.addWidget(self.description_label)
+        self._main_layout.addWidget(self.spec_label)
         self._main_layout.addWidget(self.key_label)
         self._main_layout.addWidget(self._top_widget)
         # self._main_layout.addWidget(self.option_buttons)
@@ -283,7 +298,8 @@ class ContinueGui(QtGui.QWidget):
         # Update thread
         self.update_thread = UpdateThread(self, self.server_interface)
         self.update_thread.buttons.connect(self.buttons_callback)
-        self.update_thread.question.connect(self.question_callback)
+        self.update_thread.description.connect(self.description_callback)
+        self.update_thread.spec.connect(self.spec_callback)
         self.update_thread.key.connect(self.key_callback)
         self.current_text.connect(self.update_thread.set_text)
         self.update_thread.start()
@@ -298,17 +314,23 @@ class ContinueGui(QtGui.QWidget):
         print "Emitting: {0}".format(text)
         self.current_text.emit(text)
 
+    def description_callback(self, text):
+        """ Puts the provided text in the label
+        :param text: string with text
+        """
+        self.description_label.setText(text)
+
     def key_callback(self, text):
         """ Puts the provided text in the label
         :param text: string with text
         """
         self.key_label.setText(text)
 
-    def question_callback(self, text):
+    def spec_callback(self, text):
         """ Puts the provided text in the label
         :param text: string with text
         """
-        self.question_label.setText(text)
+        self.spec_label.setText(text)
 
     def add_to_textbox(self, text):
         """ Adds the text to the textbox, taking spaces into account
