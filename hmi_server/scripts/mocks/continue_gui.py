@@ -116,7 +116,6 @@ class UpdateThread(QtCore.QThread):
                 self._buttons = buttonstr
             if valid != self._valid:
                 self.valid.emit(valid)
-                print "Emitting valid: {0}".format(valid)
                 self._valid = valid
             self._submit = False  # Reset submit button
             r.sleep()
@@ -219,8 +218,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         else:
             self._mode = GuiMode.USE_GRAMMAR
 
-        print "Yeah, received a request"
-
+        print "Received HMI request"
         r = rospy.Rate(5.0)
         while self._mode != GuiMode.RESULT_PENDING:  # and not is_preempt_requested()
             if is_preempt_requested():
@@ -334,7 +332,8 @@ class ContinueGui(QtGui.QWidget):
 
         # Add the QButtonGroup
         # self.option_buttons = QtGui.QButtonGroup(self) (ToDo: how can I do this nicely???)
-        self.button_layout = QtGui.QVBoxLayout()
+        # self.button_layout = QtGui.QVBoxLayout()
+        self.button_layout = QtGui.QGridLayout()
         self.button_widget = QtGui.QWidget()
         self.button_widget.setLayout(self.button_layout)
         self.button_widget.setSizePolicy(2, 2)  # Makes sure we don't get enormous buttons
@@ -381,7 +380,6 @@ class ContinueGui(QtGui.QWidget):
         this as a signal
         """
         text = self.textbox.toPlainText()
-        print "Emitting: {0}".format(text)
         self.current_text.emit(text)
 
     def description_callback(self, text):
