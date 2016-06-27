@@ -19,6 +19,7 @@ from hmi_server.abstract_server import HMIResult, AbstractHMIServer
 class UpdateThread(QtCore.QThread):
     """ Update thread """
     question = QtCore.pyqtSignal(['QString'])
+    key = QtCore.pyqtSignal(['QString'])
     buttons = QtCore.pyqtSignal(['QString'])  # String, buttons separated by ;
 
     def __init__(self, gui, server):
@@ -32,8 +33,9 @@ class UpdateThread(QtCore.QThread):
         self._gui = gui
         self._server = server
 
-        self._buttons = ""
         self._question = ""
+        self._buttons = ""
+        self._key = ""
         self._current_text = ""
 
     def run(self):
@@ -41,10 +43,17 @@ class UpdateThread(QtCore.QThread):
         print "Thread.run"
         r = rospy.Rate(5)
         while not rospy.is_shutdown():
-            question, buttons = self._server.update(self._current_text)
+            # question, buttons = self._server.update(self._current_text)
+            res = self._server.update(self._current_text)
+            question = res.question
+            key = res.key
+            buttons = res.buttons
 
             # if question and question != self.question:
-            if question != self.question:
+            if key != self._key:
+                self.key.emit(key)
+                self._key = key
+            if question != self._question:
                 self.question.emit(question)
                 self._question = question
             # if len(buttons) > 0:
@@ -77,6 +86,26 @@ class GuiMode(object):
     IDLE = 0
     SIMPLE_QUESTION = 1
     USE_GRAMMAR = 2
+
+
+# -----------------------------------------------------------------------------
+
+
+class UpdateResult(object):
+    """ Return value of the update function of the HMIServerGuiInterface """
+    def __init__(self, question="", key="", buttons=[]):
+        """ Constructor
+
+        :param question: asked question ("Which <fruit> would you like")
+        :param key: part of the answer we are answering  ("<fruit>")
+        :param buttons: possible buttons to click (["banana", "apple"])
+        """
+        self.question = question
+        self.key = key
+        self.buttons = buttons
+
+    def __repr__(self):
+        return "Question: {0}\nKey: {1}\nButtons: {2}".format(self.question, self.key, self.buttons)
 
 
 # -----------------------------------------------------------------------------
@@ -131,12 +160,16 @@ class HMIServerGUIInterface(AbstractHMIServer):
         #####
         print "Yeah, received a request"
 
-        r = rospy.Rate(0.2)
-        while self._mode != GuiMode.RESULT_PENDING:
+        r = rospy.Rate(5.0)
+        while self._mode != GuiMode.RESULT_PENDING:  # and not is_preempt_requested()
+            if is_preempt_requested():
+                break
+            # print "Checking result, mode: {0}, preempt requested: {1}".format(self._mode, is_preempt_requested())
             r.sleep()
 
         self._mode = GuiMode.IDLE
 
+        print "Yeah, we're done, result: {0}".format(self._results_dict)
         return self._result
 
     def update(self, current_text):
@@ -148,7 +181,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         """
         # If idle: return
         if self._mode in [GuiMode.IDLE, GuiMode.RESULT_PENDING]:
-            return "", []
+            return UpdateResult("", "", [])
 
         # If simple question: check if answered
         if self._mode == GuiMode.SIMPLE_QUESTION:
@@ -160,12 +193,15 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 self._results_dict[k] = current_text
                 self._simple_question_index += 1
                 if len(self._choices) == self._simple_question_index:
-                    print "Yeah, we're done, result: {0}".format(self._results_dict)
                     self._result = HMIResult(results=self._results_dict)
                     self._mode = GuiMode.RESULT_PENDING
-                    return "", []
+                    return UpdateResult("", "", [])
+                else:
+                    return UpdateResult(self._spec, "", [])
 
-            return k, v
+            return UpdateResult(self._spec, k, v)
+
+        return UpdateResult("", "", [])
 
 
 # -----------------------------------------------------------------------------
@@ -203,6 +239,10 @@ class ContinueGui(QtGui.QWidget):
         self.question_label = QtGui.QLabel(self)
         self.question_label.setMaximumHeight(100)
 
+        # Add the key box
+        self.key_label = QtGui.QLabel(self)
+        self.key_label.setMaximumHeight(100)
+
         # Add the texteditbox
         self.textbox = QtGui.QTextEdit(self)
         self.textbox.textChanged.connect(self._text_changed)
@@ -229,7 +269,7 @@ class ContinueGui(QtGui.QWidget):
 
         # Main layout
         self._main_layout = QtGui.QVBoxLayout(self)
-        self._main_layout.addWidget(self.question_label)
+        self._main_layout.addWidget(self.key_label)
         self._main_layout.addWidget(self._top_widget)
         # self._main_layout.addWidget(self.option_buttons)
         self._main_layout.addWidget(self.button_widget)
@@ -243,7 +283,8 @@ class ContinueGui(QtGui.QWidget):
         # Update thread
         self.update_thread = UpdateThread(self, self.server_interface)
         self.update_thread.buttons.connect(self.buttons_callback)
-        self.update_thread.question.connect(self.label_callback)
+        self.update_thread.question.connect(self.question_callback)
+        self.update_thread.key.connect(self.key_callback)
         self.current_text.connect(self.update_thread.set_text)
         self.update_thread.start()
 
@@ -257,7 +298,13 @@ class ContinueGui(QtGui.QWidget):
         print "Emitting: {0}".format(text)
         self.current_text.emit(text)
 
-    def label_callback(self, text):
+    def key_callback(self, text):
+        """ Puts the provided text in the label
+        :param text: string with text
+        """
+        self.key_label.setText(text)
+
+    def question_callback(self, text):
         """ Puts the provided text in the label
         :param text: string with text
         """
