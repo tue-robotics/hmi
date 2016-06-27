@@ -288,6 +288,7 @@ class ContinueGui(QtGui.QWidget):
         self._main_layout.addWidget(self._top_widget)
         # self._main_layout.addWidget(self.option_buttons)
         self._main_layout.addWidget(self.button_widget)
+        self._main_layout.insertStretch(-1, 0)
 
         # List with ButtonCBs
         self._button_cbs = []
