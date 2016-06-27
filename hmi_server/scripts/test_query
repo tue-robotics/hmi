@@ -12,4 +12,5 @@ server = args.server
 
 rospy.init_node('test_query_raw', anonymous=True)
 api = Api(server)
-api.query('Say apple or banana', '<name>', {'name': ["apple", "banana"]})
+api.query('Choose apple or banana and beer or coke', '<fruit>, <drink>',
+          {'fruit': ["apple", "banana"], 'drink': ['beer', 'coke']})
