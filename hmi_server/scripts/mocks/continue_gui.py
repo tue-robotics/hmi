@@ -13,6 +13,29 @@ from python_qt_binding import QtCore
 # TU/e
 from hmi_server.abstract_server import HMIResult, AbstractHMIServer
 
+
+# -----------------------------------------------------------------------------
+
+
+def get_word_options(text):
+    """ Returns the possible options that can follow on the provided text
+
+    :param text: string with the currently provided text
+    :return: list with possibilities
+    """
+    print "Text: '{0}'".format(text)
+    if text == "":
+        return ['go', 'move', 'drive', 'navigate']
+    if text in ['go', 'move', 'drive', 'navigate']:
+        return ['to']
+    if text in ['go to', 'move to', 'drive to', 'navigate to']:
+        return ['the']
+    if text in ['go to the', 'move to the', 'drive to the', 'navigate to the']:
+        return ['livingroom', 'kitchen', 'bedroom', 'hallway']
+    else:
+        return []
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -210,6 +233,12 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
             return UpdateResult(self._description, self._spec, k, v)
 
+        # If grammar: check parser
+        if self._mode == GuiMode.USE_GRAMMAR:
+            options = get_word_options(current_text)
+            print "Options: {0}".format(options)
+            return UpdateResult(self._description, "", "", options)
+
         return UpdateResult("", "", "", [])
 
 
@@ -238,7 +267,6 @@ class ContinueGui(QtGui.QWidget):
     def __init__(self):
         """ Constructor """
         super(ContinueGui, self).__init__()
-        # ToDo: add actionlib client
 
         self.resize(640, 480)
         self.move(300, 300)
@@ -346,11 +374,11 @@ class ContinueGui(QtGui.QWidget):
             self.textbox.insertPlainText(" "+text)
 
     def buttons_callback(self, buttons):
-        """ PyQt slot for buttons to add
+        """ PyQt slot for buttons to add. Buttons are always cleared beforehand
         :param buttons: QString containing the text of the buttons to add, separated by ';'
         """
+        self.clear_buttons()
         if buttons == "":
-            self.clear_buttons()
             self.clear_text()
 
         for b in str(buttons).split(';'):
