@@ -21,4 +21,4 @@ filepath = args.file
 
 with open(filepath, 'r') as f:
     api = Api(server)
-    api.query_raw('', f.read())
+    api.query_raw('', f.read(), timeout=1000)
