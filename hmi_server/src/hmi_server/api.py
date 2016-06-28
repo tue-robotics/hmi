@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import rospy
+import re
+import random
 from hmi_msgs.msg import QueryAction, QueryGoal, Choice
 from actionlib import SimpleActionClient, SimpleGoalState, GoalStatus
 from hmi_server.abstract_server import queryToROS, resultFromROS
@@ -40,7 +42,7 @@ class Api(object):
                     value = random.choice(req_choices[req_c])
                     example = example.replace("<%s>"%c, value)
 
-        rospy.loginfo("Example: \x1b[1;43m'{}'\x1b[0m".format(example))
+        rospy.loginfo("Example: \x1b[1;43m'{}'\x1b[0m".format(example.strip()))
 
     def _send_query(self, description, spec, choices):
         goal = queryToROS(description, spec, choices)
@@ -87,7 +89,7 @@ class Api(object):
         Perform a HMI query without choices, returns a string
         '''
         rospy.loginfo('Question: %s, spec: %s', description, spec)
-        self._print_example(spec, choices)
+        self._print_example(spec, {})
 
         self._send_query(description, spec, {})
         answer = self._wait_for_result_and_get()
