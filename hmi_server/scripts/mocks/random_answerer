@@ -7,9 +7,20 @@ from random import choice as choose
 from hmi_server.abstract_server import AbstractHMIServer, HMIResult
 
 
+wait_time = 5
+
+
 class HMIServer(AbstractHMIServer):
 
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
+
+        rospy.loginfo('Waiting for %d seconds', wait_time)
+        start = rospy.Time.now()
+        while rospy.Time.now() - start < rospy.Duration(wait_time) \
+              and not is_preempt_requested() \
+              and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
         results = {}
         for choice, values in choices.items():
             if len(values):
