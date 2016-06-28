@@ -53,7 +53,7 @@ class Api(object):
 
         return self._client.get_result()
 
-    def query(self, description, spec, choices):
+    def query(self, description, spec, choices, timeout=10):
         '''
         Perform a HMI query, returns a dict of {choicename: value}
         '''
@@ -61,7 +61,7 @@ class Api(object):
         _print_example(spec, choices)
 
         self._send_query(description, spec, choices)
-        answer = self._wait_for_result_and_get()
+        answer = self._wait_for_result_and_get(timeout=timeout)
 
         rospy.logdebug('Answer: %s', answer)
         result = resultFromROS(answer)
@@ -70,7 +70,7 @@ class Api(object):
 
         return result
 
-    def query_raw(self, description, spec):
+    def query_raw(self, description, spec, timeout=10):
         '''
         Perform a HMI query without choices, returns a string
         '''
@@ -78,7 +78,7 @@ class Api(object):
         _print_example(spec, {})
 
         self._send_query(description, spec, {})
-        answer = self._wait_for_result_and_get()
+        answer = self._wait_for_result_and_get(timeout=timeout)
 
         rospy.logdebug('Answer: %s', answer)
         result = answer.raw_result
