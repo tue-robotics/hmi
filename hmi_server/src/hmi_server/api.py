@@ -20,6 +20,28 @@ class Api(object):
         rospy.loginfo('waiting for "%s" server', name)
         self._client.wait_for_server()
 
+    def _print_example(self, req_spec, req_choices):
+        # Copy request
+        example = "(%s)" % req_spec
+
+        # Pick random group if available
+        while re.search('\([^\)]+\)', example):
+            options = re.findall('\([^\(\)]+\)', example)
+            for option in options:
+                example = example.replace(option, random.choice(option[1:-1].split("|")), 1)
+
+        # Fetch all the residual choices
+        choices = re.findall("<([^<>]+)>", example)
+
+        # Parse the choices in the ending result :)
+        for c in choices:
+            for req_c in req_choices:
+                if req_c == c:
+                    value = random.choice(req_choices[req_c])
+                    example = example.replace("<%s>"%c, value)
+
+        rospy.loginfo("Example: \x1b[1;43m'{}'\x1b[0m".format(example))
+
     def _send_query(self, description, spec, choices):
         goal = queryToROS(description, spec, choices)
         state = self._client.send_goal(goal)
@@ -48,6 +70,7 @@ class Api(object):
         Perform a HMI query, returns a dict of {choicename: value}
         '''
         rospy.loginfo('Question: %s, spec: %s', description, spec)
+        self._print_example(spec, choices)
 
         self._send_query(description, spec, choices)
         answer = self._wait_for_result_and_get()
@@ -64,6 +87,7 @@ class Api(object):
         Perform a HMI query without choices, returns a string
         '''
         rospy.loginfo('Question: %s, spec: %s', description, spec)
+        self._print_example(spec, choices)
 
         self._send_query(description, spec, {})
         answer = self._wait_for_result_and_get()
@@ -79,6 +103,7 @@ class Api(object):
         Convert old queryies to a HMI query
         '''
         rospy.loginfo('spec: %s', spec)
+        self._print_example(spec, choices)
 
         self._send_query('', spec, choices)
         try:
