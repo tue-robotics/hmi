@@ -60,18 +60,20 @@ class MultiClient(object):
                 result = client.get_result()
                 break
 
-        if result:
-            rospy.loginfo('result: %s', result_to_str(result))
-        else:
-            rospy.logwarn('no result received')
-
         # cancel all the others
         for client in clients:
             if not client.is_done():
                 client.cancel_goal()
 
+        if result:
+            rospy.loginfo('result: %s', result_to_str(result))
+        else:
+            rospy.logwarn('no result received')
+
         if self.server.is_preempt_requested():
             self.server.set_preempted()
+        elif not result:
+            self.server.set_aborted(result=None, text="No result")
         else:
             self.server.set_succeeded(result)
 

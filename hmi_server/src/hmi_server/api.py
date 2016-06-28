@@ -39,7 +39,11 @@ class Api(object):
 
         state = self._client.get_state()
         if state != GoalStatus.SUCCEEDED:
-            raise TimeoutException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
+            if state == GoalStatus.PREEMPTED:
+                # Timeout
+                raise TimeoutException("Goal did not succeed within the time limit")
+            else:
+                raise Exception("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
         return self._client.get_result()
 
