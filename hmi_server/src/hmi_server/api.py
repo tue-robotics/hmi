@@ -115,6 +115,8 @@ class Api(object):
         try:
             answer = self._wait_for_result_and_get(timeout=timeout)
         except TimeoutException:
+            return GetSpeechResponse(result="")
+        except:
             return None
 
         rospy.logdebug('Answer: %s', answer)
