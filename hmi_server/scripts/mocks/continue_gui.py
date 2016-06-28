@@ -272,7 +272,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 self._result = HMIResult(self._current_text)  # The stored value is returned to make sure the
                 # text did not change between the check and clicking the 'Submit' button
                 self._mode = GuiMode.RESULT_PENDING
-                return UpdateResult(description=self._description, spec=self._spec, key="", buttons=[],
+                return UpdateResult(description="", spec="", key="", buttons=[],
                                     isvalid=False)
             else:
                 if not current_text:
