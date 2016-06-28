@@ -1,27 +1,31 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import String
 from hmi_server.abstract_server import AbstractHMIServer, HMIResult
+from std_msgs.msg import String
 
 
 class StringTopicServer(AbstractHMIServer):
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+        self._string = None
+        self._string_sub = rospy.Subscriber("string", String, self._string_callback, queue_size=1)
 
     def _string_callback(self, msg):
         self._string = msg.data
 
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
+        rospy.loginfo("StringTopicServer: subscribed to %s", self._string_sub.name)
+
         self._string = None
-
-        string_sub = rospy.Subscriber("string", String, self._string_callback, queue_size=1)
-        rospy.loginfo("StringTopicServer: subscribed to %s", string_sub.name)
-
-        while not rospy.is_shutdown() and not is_preempt_requested():
+        while not rospy.is_shutdown() and not is_preempt_requested() and not self._string:
             rospy.sleep(.1)
-            if self._string:
-                rospy.loginfo("StringTopicServer: Received string: '%s'", self._string)
-                break
 
+        if rospy.is_shutdown() or is_preempt_requested():
+            return None
+
+        rospy.loginfo("Received string: '%s'", self._string)
         result = HMIResult(raw_result=self._string)
         self._string = None
 
