@@ -13,50 +13,9 @@ from python_qt_binding import QtCore
 # TU/e
 from hmi_server.abstract_server import HMIResult, AbstractHMIServer
 
+from cfgparser import CFGParser
 
 # -----------------------------------------------------------------------------
-
-
-def get_word_options(text):
-    """ Returns the possible options that can follow on the provided text.
-    Dirty assumption: there is ALWAYS at least one possibility (at least: 'and')
-
-    :param text: string with the currently provided text
-    :return: list with possibilities
-    """
-    # ToDo: this is a dummy function
-    s = text.split(' ')
-    if text == "" or s[-1] == 'and':
-        return ['go', 'move', 'drive', 'navigate']
-    if s[-1] in ['go', 'move', 'drive', 'navigate']:
-        return ['to']
-    if s[-1] == "to":
-        return ['the']
-    if s[-1] == 'the':
-        return ['livingroom', 'kitchen', 'bedroom', 'hallway']
-    else:
-        return ['and']
-
-
-# -----------------------------------------------------------------------------
-
-
-def is_valid(text):
-    """ Checks if the current text is valid as an assignment for the robot
-
-    :param text: current text
-    :return: bool whether this is valid
-    """
-    # ToDo: this is a dummy function
-    s = text.split(' ')
-    if len(s) in [4, 9, 14, 19]:
-        return True
-    else:
-        return False
-
-
-# -----------------------------------------------------------------------------
-
 
 class UpdateThread(QtCore.QThread):
     """ Update thread """
@@ -170,7 +129,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
     only sets the goal. An 'update' function, that must be called in a loop, does
     the actual work
     """
-    def __init__(self, name):
+    def __init__(self, name, grammar_filename=None):
         """ Constructor
         :param name: ???
         """
@@ -191,6 +150,11 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
         # For grammars
         self._current_text = ""
+
+        if grammar_filename:
+            self.parser = CFGParser.fromfile(grammar_filename)
+        else:
+            self.parser = None
 
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
         """
@@ -225,6 +189,43 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
         print "Yeah, we're done, result: {0}".format(self._results_dict)
         return self._result
+
+    def _get_word_options(self, words):
+        """ Returns the possible options that can follow on the provided sequence of words.
+
+        :param words: list of words of the currently provided text
+        :return: list with possibilities
+        """
+        options = list(set(self.parser.next_word("T", words)))
+
+        new_options = []
+
+        for opt in options:
+            next_words = words + [opt]
+
+            while True:
+                next_options = list(set(self.parser.next_word("T", next_words)))
+
+                if len(next_options) != 1 or self._is_valid_sentence(next_words):
+                    break
+
+                next_words += [next_options[0]]
+                opt += " {}".format(next_options[0])
+            new_options.append(opt)
+
+        return new_options
+
+    def _is_valid_sentence(self, words):
+        """ Checks if the current list of words is valid as an assignment for the robot
+
+        :param words: list of words of the currently provided text
+        :return: bool whether this the words are a valid command
+        """
+
+        if self.parser.parse("T", words):
+            return True
+        else:
+            return False
 
     def update(self, current_text, submit=False):
         """ Continuously updates
@@ -265,15 +266,23 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
         # If grammar: check parser
         if self._mode == GuiMode.USE_GRAMMAR:
-            if submit:
+            if not self.parser:
+                return UpdateResult(description=self._description, spec="", key="", buttons=[], isvalid=False)
+            elif submit:
                 self._result = HMIResult(self._current_text)  # The stored value is returned to make sure the
                 # text did not change between the check and clicking the 'Submit' button
                 self._mode = GuiMode.RESULT_PENDING
                 return UpdateResult(description=self._description, spec=self._spec, key="", buttons=[],
                                     isvalid=False)
             else:
-                options = get_word_options(current_text)
-                valid = is_valid(current_text)
+                if not current_text:
+                    words = []
+                else:
+                    words = current_text.strip().split(' ')
+
+                options = self._get_word_options(words)
+                valid = self._is_valid_sentence(words)
+
                 self._current_text = current_text  # Store the current text
                 return UpdateResult(description=self._description, spec="", key="", buttons=options, isvalid=valid)
 
@@ -302,7 +311,7 @@ class ContinueGui(QtGui.QWidget):
     """
     current_text = QtCore.pyqtSignal(['QString'])   # Necessary to emit current text to update thread
 
-    def __init__(self):
+    def __init__(self, grammar_filename=None):
         """ Constructor """
         super(ContinueGui, self).__init__()
 
@@ -372,7 +381,7 @@ class ContinueGui(QtGui.QWidget):
         self._button_cbs = []
 
         # Setup the interface
-        self.server_interface = HMIServerGUIInterface('continui')
+        self.server_interface = HMIServerGUIInterface('continui', grammar_filename)
 
         # Update thread
         self.update_thread = UpdateThread(self, self.server_interface)
@@ -489,6 +498,12 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
 
-    w = ContinueGui()
+    if len(sys.argv) > 1 and sys.argv[1][0] != '_':
+        grammar_filename = sys.argv[1]
+    else:
+        grammar_filename = None
+
+    w = ContinueGui(grammar_filename=grammar_filename)
+    #w = ContinueGui()
 
     sys.exit(app.exec_())
