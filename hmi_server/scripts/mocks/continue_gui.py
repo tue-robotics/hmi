@@ -372,7 +372,7 @@ class ContinueGui(QtGui.QWidget):
         self._button_cbs = []
 
         # Setup the interface
-        self.server_interface = HMIServerGUIInterface('blaat')
+        self.server_interface = HMIServerGUIInterface('continui')
 
         # Update thread
         self.update_thread = UpdateThread(self, self.server_interface)
