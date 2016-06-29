@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-
 import sys
+import math
 
 # ROS
 import rospy
@@ -460,14 +460,41 @@ class ContinueGui(QtGui.QWidget):
         """ PyQt slot for buttons to add. Buttons are always cleared beforehand
         :param buttons: QString containing the text of the buttons to add, separated by ';'
         """
+        # Start by clearing
         self.clear_buttons()
 
-        for b in str(buttons).split(';'):
-            self.add_button(b)
+        # If we don't have to add anything, return
+        if not buttons:
+            return
+        
+        start = rospy.Time.now()
 
-    def add_button(self, text):
+        # We want a maximum of 160 characters on one line. This means one word can have up to 160/5=32 characters
+        # If this is exceeded, we will scale accordingly
+        buttonlist = buttons.split(';')
+        max_length = len(buttonlist[0])
+        for b in buttonlist:
+            if len(b) > max_length:
+                max_length = len(b)
+        factor = 32.0/max_length
+        nr_cols = max(1, math.floor(factor * 5))
+        nr_rows = math.ceil(len(buttons)/float(nr_cols))
+
+        row = 0
+        col = 0
+        for b in str(buttons).split(';'):
+            self.add_button(b, row, col)
+            col += 1
+            if col == nr_cols:
+                col = 0
+                row += 1
+        rospy.loginfo("Adding buttons took {0} seconds".format((rospy.Time.now() - start).to_sec()))
+
+    def add_button(self, text, row, col):
         """ Adds a button with an option to the GUI
         :param text: text of the button to add
+        :param row: row where to add the button
+        :param col: column where to add the button
         """
         if text == "":
             return
@@ -478,7 +505,7 @@ class ContinueGui(QtGui.QWidget):
 
         bcb = ButtonCB(self, text)
         self._button_cbs.append(bcb)
-        self.button_layout.addWidget(b)
+        self.button_layout.addWidget(b, row, col)
         b.clicked.connect(bcb.callback)
 
     def clear_buttons(self):
