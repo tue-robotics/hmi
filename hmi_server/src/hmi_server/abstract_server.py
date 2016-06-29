@@ -39,9 +39,9 @@ class HMIResult(object):
         self.results = results if results else {}
         self.raw_result = raw_result
 
-    def to_ros(self):
+    def to_ros(self, talker_id=""):
         results = [Result(id=choice,value=value) for (choice, value) in self.results.items()]
-        return QueryResult(results=results, raw_result=self.raw_result)
+        return QueryResult(results=results, raw_result=self.raw_result, talker_id=talker_id)
 
     def from_ros(self):
         raise NotImplementedError()
@@ -118,7 +118,7 @@ class AbstractHMIServer(object):
         else:
             # we've got a result or a cancel
             if result:
-                self._set_succeeded(result=result.to_ros())
+                self._set_succeeded(result=result.to_ros(self._action_name))
                 rospy.loginfo('result: %s', result)
             else:
                 rospy.loginfo('cancelled')

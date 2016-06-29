@@ -28,6 +28,7 @@ class Api(object):
         rospy.loginfo('waiting for "%s" server', name)
         self._client.wait_for_server()
         self._feedback = False
+        self.last_talker_id = ""
 
     def _send_query(self, description, spec, choices):
         goal = queryToROS(description, spec, choices)
@@ -75,6 +76,8 @@ class Api(object):
         self._send_query(description, spec, choices)
         answer = self._wait_for_result_and_get(timeout=timeout)
 
+        self.last_talker_id = answer.talker_id # Keep track of the last talker_id
+
         rospy.logdebug('Answer: %s', answer)
         result = resultFromROS(answer)
 
@@ -91,6 +94,8 @@ class Api(object):
 
         self._send_query(description, spec, {})
         answer = self._wait_for_result_and_get(timeout=timeout)
+
+        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
         rospy.logdebug('Answer: %s', answer)
         result = answer.raw_result
@@ -112,6 +117,8 @@ class Api(object):
             return GetSpeechResponse(result="")
         except:
             return None
+
+        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
         rospy.logdebug('Answer: %s', answer)
         choices = resultFromROS(answer)
