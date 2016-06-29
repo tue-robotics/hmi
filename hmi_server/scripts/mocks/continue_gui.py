@@ -269,7 +269,15 @@ class HMIServerGUIInterface(AbstractHMIServer):
             if not self.parser:
                 return UpdateResult(description=self._description, spec="", key="", buttons=[], isvalid=False)
             elif submit:
-                self._result = HMIResult(self._current_text)  # The stored value is returned to make sure the
+
+                filtered_text = self._current_text
+                num_ands = filtered_text.count("and")
+                if num_ands > 1:
+                    filtered_text = filtered_text.replace(" and", "", num_ands - 1)
+
+                # process self._current_text
+
+                self._result = HMIResult(filtered_text)  # The stored value is returned to make sure the
                 # text did not change between the check and clicking the 'Submit' button
                 self._mode = GuiMode.RESULT_PENDING
                 return UpdateResult(description="", spec="", key="", buttons=[],
