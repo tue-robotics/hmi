@@ -478,7 +478,7 @@ class ContinueGui(QtGui.QWidget):
             if len(b) > max_length:
                 max_length = len(b)
         factor = 32.0/max_length
-        nr_cols = max(1, math.floor(factor * 5))
+        nr_cols = min(5, max(1, math.floor(factor * 5)))
         nr_rows = math.ceil(len(buttons)/float(nr_cols))
 
         row = 0
