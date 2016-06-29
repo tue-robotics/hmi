@@ -10,6 +10,8 @@ from hmi_server.common import random_fold_spec
 class TimeoutException(Exception):
     pass
 
+def _truncate(data):
+    return (data[:75] + '..') if len(data) > 75 else data
 
 def _print_example(spec, choices):
     # Copy request
@@ -57,7 +59,7 @@ class Api(object):
         '''
         Perform a HMI query, returns a dict of {choicename: value}
         '''
-        rospy.loginfo('Question: %s, spec: %s', description, spec)
+        rospy.loginfo('Question: %s, spec: %s', description, _truncate(spec))
         _print_example(spec, choices)
 
         self._send_query(description, spec, choices)
@@ -74,7 +76,7 @@ class Api(object):
         '''
         Perform a HMI query without choices, returns a string
         '''
-        rospy.loginfo('Question: %s, spec: %s', description, spec)
+        rospy.loginfo('Question: %s, spec: %s', description, _truncate(spec))
         _print_example(spec, {})
 
         self._send_query(description, spec, {})
@@ -90,7 +92,7 @@ class Api(object):
         '''
         Convert old queryies to a HMI query
         '''
-        rospy.loginfo('spec: %s', spec)
+        rospy.loginfo('spec: %s', _truncate(spec))
         _print_example(spec, choices)
 
         self._send_query('', spec, choices)
