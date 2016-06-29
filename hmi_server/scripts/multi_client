@@ -30,16 +30,12 @@ class MultiClient(object):
     def execute_cb(self, goal):
         rospy.loginfo('got a goal: %s', goal_to_str(goal))
 
-        client_nss = set(self.find_servers(self._server_namespace))
+        client_nss = set()
         rospy.loginfo("Found %d servers: %s", len(client_nss), client_nss)
-        clients = [HMIClient(ns) for ns in client_nss]
+        clients = []
 
-        # wait 0.1 second for every client
+        # wait 0.1 second for every new client
         timeout = rospy.Duration(0.1)
-        clients = [client for client in clients if client.wait_for_server(timeout)]
-
-        for client in clients:
-            client.send_goal(goal)
 
         # wait for one server to be finished
         r = rospy.Rate(10)
@@ -48,8 +44,7 @@ class MultiClient(object):
             if self.server.is_preempt_requested():
                 rospy.loginfo('%s: Preempted' % self._action_name)
                 break
-            if self.one_client_done(clients):
-                break
+
             # check if a new client registered
             new_client_nss = set(self.find_servers(self._server_namespace)) - client_nss
             if new_client_nss:
@@ -61,7 +56,11 @@ class MultiClient(object):
                     clients.append(client)
                 client_nss |= new_client_nss
 
-            rospy.loginfo('spinning...')
+            # check if we are done
+            if self.one_client_done(clients):
+                break
+
+            rospy.logdebug('spinning...')
             r.sleep()
 
         # get the result
