@@ -106,7 +106,7 @@ class MultiClient(object):
             topic_ns = namespace(name)[0:-1]
             if topic_ns != self._server_namespace:
                 if topic_type == 'hmi_msgs/QueryActionResult':
-                    rospy.loginfo('Found topic %s', name)
+                    # rospy.loginfo('Found topic %s', name)
                     topics.append(topic_ns)
 
         return topics
