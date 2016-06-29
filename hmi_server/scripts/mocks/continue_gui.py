@@ -7,6 +7,7 @@ import math
 import rospy
 
 # Qt
+import signal
 from python_qt_binding import QtGui
 from python_qt_binding import QtCore
 
@@ -466,7 +467,7 @@ class ContinueGui(QtGui.QWidget):
         # If we don't have to add anything, return
         if not buttons:
             return
-        
+
         start = rospy.Time.now()
 
         # We want a maximum of 160 characters on one line. This means one word can have up to 160/5=32 characters
@@ -525,17 +526,25 @@ class ContinueGui(QtGui.QWidget):
         """ Clears the text from the textbox """
         self.textbox.setText("")
 
+    def closeEvent(self, event):
+        rospy.loginfo('Close event received')
+        rospy.signal_shutdown('close event')
+
 
 if __name__ == '__main__':
 
     rospy.init_node('continue_gui', anonymous=True)
 
-    # For proper closing?
-    import signal
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    #####
-
     app = QtGui.QApplication(sys.argv)
+    timer = QtCore.QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None) # wake up python every now and again
+
+    # also close Qt when a Ctrl+C is pressed
+    def handleIntSignal(signum, frame):
+        rospy.loginfo('close all windows')
+        app.closeAllWindows()
+    signal.signal(signal.SIGINT, handleIntSignal)
 
     if len(sys.argv) > 1 and sys.argv[1][0] != '_':
         grammar_filename = sys.argv[1]
