@@ -8,6 +8,7 @@ Choice[]    choices
 
 # Result
 
+string      talker_id # id of the server that created the response
 string      raw_result # If you want to do the parsing yourself
 Result[]    results
 
