@@ -2,7 +2,7 @@
 
 import rospy
 import traceback
-from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, Choice
+from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, QueryActionFeedback, Choice
 from actionlib import SimpleActionServer
 from abc import ABCMeta, abstractmethod
 
@@ -127,8 +127,8 @@ class AbstractHMIServer(object):
     def _set_succeeded(self, result):
         self._server.set_succeeded(result)
 
-    def _set_succeeded(self, result):
-        self._server.set_succeeded(result)
+    def _publish_feedback(self):
+        self._server.publish_feedback(QueryActionFeedback())
 
     @abstractmethod
     def _determine_answer(self, description, spec, choices, is_preempt_requested):

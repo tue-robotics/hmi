@@ -27,23 +27,33 @@ class Api(object):
         self._client = SimpleActionClient(name, QueryAction)
         rospy.loginfo('waiting for "%s" server', name)
         self._client.wait_for_server()
+        self._feedback = False
 
     def _send_query(self, description, spec, choices):
         goal = queryToROS(description, spec, choices)
-        state = self._client.send_goal(goal)
+        state = self._client.send_goal(goal, feedback_cb=self._feedback_callback)
+
+    def _feedback_callback(self, feedback):
+        rospy.loginfo("Received feedback")
+        self._feedback = True
 
     def _wait_for_result_and_get(self, timeout=None):
         execute_timeout = rospy.Duration(timeout) if timeout else rospy.Duration(10)
         preempt_timeout = rospy.Duration(1)
 
-        if not self._client.wait_for_result(execute_timeout):
-            # preempt action
-            rospy.logdebug("Canceling goal")
-            self._client.cancel_goal()
-            if self._client.wait_for_result(preempt_timeout):
-                rospy.loginfo("Preempt finished within specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
+        while not self._client.wait_for_result(execute_timeout):
+            if not self._feedback:
+                # preempt action
+                rospy.logdebug("Canceling goal")
+                self._client.cancel_goal()
+                if self._client.wait_for_result(preempt_timeout):
+                    rospy.loginfo("Preempt finished within specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
+                else:
+                    rospy.logwarn("Preempt didn't finish specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
+                break
             else:
-                rospy.loginfo("Preempt didn't finish specified preempt_timeout [%.2f]", preempt_timeout.to_sec());
+                self._feedback = False
+                rospy.loginfo("I received feedback, let's wait another %.2f seconds" % execute_timeout.to_sec())
 
         state = self._client.get_state()
         if state != GoalStatus.SUCCEEDED:

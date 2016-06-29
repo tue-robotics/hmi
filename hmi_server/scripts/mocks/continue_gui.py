@@ -235,6 +235,10 @@ class HMIServerGUIInterface(AbstractHMIServer):
         :return: tuple with a question (optionally) and a list with the possible words. If the list is empty,
         there is no current goal any more
         """
+
+        if self._current_text is not current_text:
+            self._publish_feedback()
+
         # If idle: return
         if self._mode in [GuiMode.IDLE, GuiMode.RESULT_PENDING]:
             return UpdateResult(description="", spec="", key="", buttons=[], isvalid=False)

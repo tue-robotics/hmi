@@ -27,6 +27,9 @@ class MultiClient(object):
         self.server.start()
         rospy.loginfo('%s started with ns: %s', name, server_namespace)
 
+    def _feedback_callback(self, feedback):
+        self.server.publish_feedback(feedback)
+
     def execute_cb(self, goal):
         rospy.loginfo('got a goal: %s', goal_to_str(goal))
 
@@ -52,7 +55,7 @@ class MultiClient(object):
                 for client_ns in new_client_nss:
                     client = HMIClient(client_ns)
                     client.wait_for_server(timeout)
-                    client.send_goal(goal)
+                    client.send_goal(goal, feedback_cb=self._feedback_callback)
                     clients.append(client)
                 client_nss |= new_client_nss
 
@@ -118,10 +121,10 @@ class HMIClient(object):
 
         self.client = SimpleActionClient(client_namespace, QueryAction)
 
-    def send_goal(self, goal):
+    def send_goal(self, goal, feedback_cb):
         rospy.loginfo('sending %s the following goal: %s',
                       self._client_namespace, goal_to_str(goal))
-        self.client.send_goal(goal)
+        self.client.send_goal(goal, feedback_cb=feedback_cb)
 
     def wait_for_result(self, timeout=rospy.Duration()):
         return self.client.wait_for_result(timeout=timeout)
