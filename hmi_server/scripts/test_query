@@ -19,5 +19,5 @@ server = args.server
 
 # do the query
 api = Api(server)
-api.query('Choose apple or banana and beer or coke', '<fruit>, <drink>',
+api.query('Choose apple or banana and beer or coke', '<fruit> <drink>',
           {'fruit': ["apple", "banana"], 'drink': ['beer', 'coke']})
