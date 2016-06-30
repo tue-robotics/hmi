@@ -240,7 +240,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         there is no current goal any more
         """
 
-        if self._latest is not current_text:
+        if self._latest_text is not current_text:
             self._latest_text = current_text
             self._publish_feedback()
 
