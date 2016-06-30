@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
 import rospy
-from hmi_msgs.msg import QueryAction, QueryResult, Result
 from actionlib import SimpleActionClient, SimpleActionServer, SimpleGoalState
+from hmi_msgs.msg import QueryAction
+from hmi_server.common import trim_string
 from rosgraph.names import namespace
 
 
 def goal_to_str(goal):
     logstr = ', '.join(['(%s)' % str(c).replace('\n', ', ') for c in goal.choices])
-    return 'description: "%s", spec: "%s", choices: [%s]' % (goal.description, goal.spec, logstr)
+    return 'description: "%s", spec: "%s", choices: [%s]' % (goal.description, trim_string(goal.spec), logstr)
 
 
 def result_to_str(result):

@@ -5,6 +5,11 @@ import re
 import rospy
 
 
+def trim_string(data, max_length=75, ellipsis='...'):
+    l = max_length - len(ellipsis)
+    return (data[:l] + ellipsis) if len(data) > l else data
+
+
 def random_fold_spec(spec, choices):
     """
     From a given spec and choices, return a sentence that is possible

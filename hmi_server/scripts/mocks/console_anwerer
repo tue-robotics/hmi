@@ -27,8 +27,6 @@ class HMIServer(object):
             self.server.set_aborted(text="Cancelled by user")
 
     def determine_answer(self, question, spec, choices):
-        rospy.loginfo('I got a question: %s', question)
-        rospy.loginfo('This is the spec: %s', spec)
 
         results = []
         for choice in choices:

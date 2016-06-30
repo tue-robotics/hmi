@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import rospy
 import traceback
-from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, QueryActionFeedback, Choice
-from actionlib import SimpleActionServer
 from abc import ABCMeta, abstractmethod
+
+import rospy
+from actionlib import SimpleActionServer
+from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, QueryActionFeedback, Choice
+from hmi_server.common import trim_string
 
 
 def queryToROS(description, spec, choices):
@@ -101,7 +103,7 @@ class AbstractHMIServer(object):
                 choices[choice.id] = choice.values
 
         rospy.loginfo('I got a question: %s', goal.description)
-        rospy.loginfo('This is the spec: %s, %s', goal.spec, repr(choices))
+        rospy.loginfo('This is the spec: %s, %s', trim_string(goal.spec), repr(choices))
 
         try:
             result = self._determine_answer(description=goal.description,
