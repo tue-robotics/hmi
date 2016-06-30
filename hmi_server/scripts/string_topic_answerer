@@ -11,13 +11,12 @@ class StringTopicServer(AbstractHMIServer):
 
         self._string = None
         self._string_sub = rospy.Subscriber("string", String, self._string_callback, queue_size=1)
+        rospy.loginfo("StringTopicServer: subscribed to %s", self._string_sub.name)
 
     def _string_callback(self, msg):
         self._string = msg.data
 
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
-        rospy.loginfo("StringTopicServer: subscribed to %s", self._string_sub.name)
-
         self._string = None
         while not rospy.is_shutdown() and not is_preempt_requested() and not self._string:
             rospy.sleep(.1)
