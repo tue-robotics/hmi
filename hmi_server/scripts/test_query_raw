@@ -4,7 +4,7 @@ import argparse
 import sys
 
 import rospy
-from hmi_server.api import Api
+from hmi_server.api import Api, TimeoutException
 
 # start the node
 rospy.init_node('test_query_raw', anonymous=True)
@@ -22,4 +22,7 @@ query = args.query
 
 # do the query
 api = Api(server)
-api.query_raw('', query)
+try:
+    api.query_raw('', query)
+except TimeoutException:
+    pass

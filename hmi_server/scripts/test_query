@@ -4,7 +4,7 @@ import argparse
 import sys
 
 import rospy
-from hmi_server.api import Api
+from hmi_server.api import Api, TimeoutException
 
 # start the node
 rospy.init_node('test_query', anonymous=True)
@@ -19,5 +19,8 @@ server = args.server
 
 # do the query
 api = Api(server)
-api.query('Choose apple or banana and beer or coke', '<fruit> <drink>',
-          {'fruit': ["apple", "banana"], 'drink': ['beer', 'coke']})
+try:
+    api.query('Choose apple or banana and beer or coke', '<fruit> <drink>',
+              {'fruit': ["apple", "banana"], 'drink': ['beer', 'coke']})
+except TimeoutException:
+    pass
