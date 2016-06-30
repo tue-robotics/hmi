@@ -157,6 +157,9 @@ class HMIServerGUIInterface(AbstractHMIServer):
         else:
             self.parser = None
 
+        # To check if we need to publish feedback
+        self._latest_text = ""
+
     def _determine_answer(self, description, spec, choices, is_preempt_requested):
         """
         Sets some members and blocks until we can either an answer is created
@@ -181,7 +184,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         print "Received HMI request"
         r = rospy.Rate(5.0)
         while self._mode != GuiMode.RESULT_PENDING:  # and not is_preempt_requested()
-            if is_preempt_requested():
+            if is_preempt_requested() or rospy.is_shutdown():
                 break
             # print "Checking result, mode: {0}, preempt requested: {1}".format(self._mode, is_preempt_requested())
             r.sleep()
@@ -237,7 +240,8 @@ class HMIServerGUIInterface(AbstractHMIServer):
         there is no current goal any more
         """
 
-        if self._current_text is not current_text:
+        if self._latest is not current_text:
+            self._latest_text = current_text
             self._publish_feedback()
 
         # If idle: return
