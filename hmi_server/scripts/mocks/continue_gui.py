@@ -279,12 +279,16 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 return UpdateResult(description=self._description, spec="", key="", buttons=[], isvalid=False)
             elif submit:
 
+                # post-process the given text
+
                 filtered_text = self._current_text
                 num_ands = filtered_text.count("and")
                 if num_ands > 1:
                     filtered_text = filtered_text.replace(" and", "", num_ands - 1)
 
-                # process self._current_text
+                filtered_text = filtered_text.replace("bookcase", "bocase")
+                filtered_text = filtered_text.replace("_", " ")
+
 
                 self._result = HMIResult(filtered_text)  # The stored value is returned to make sure the
                 # text did not change between the check and clicking the 'Submit' button
@@ -297,7 +301,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 else:
                     words = current_text.strip().split(' ')
 
-                options = self._get_word_options(words)
+                options = sorted(self._get_word_options(words))
                 valid = self._is_valid_sentence(words)
 
                 self._current_text = current_text  # Store the current text
@@ -506,7 +510,7 @@ class ContinueGui(QtGui.QWidget):
             # self.clear_buttons()
 
         b = QtGui.QPushButton()
-        b.setText(text)
+        b.setText(text.replace("_", " "))
 
         bcb = ButtonCB(self, text)
         self._button_cbs.append(bcb)
