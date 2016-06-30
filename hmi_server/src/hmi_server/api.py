@@ -10,13 +10,27 @@ from hmi_server.common import random_fold_spec
 class TimeoutException(Exception):
     pass
 
+
 def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
+
 
 def _print_example(spec, choices):
     # Copy request
     spec = random_fold_spec(spec, choices)
-    rospy.loginfo("Example: \x1b[1;43m'{}'\x1b[0m".format(spec.strip()))
+    rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(spec.strip()))
+
+
+def _print_answer(answer):
+    rospy.loginfo("Robot heard \x1b[1;42m'{}'\x1b[0m {}".format(answer.raw_result, resultFromROS(answer)))
+
+
+def _print_timeout():
+    rospy.loginfo("Robot did not hear you \x1b[1;43m(timeout)\x1b[0m")
+
+
+def _print_generic_failure():
+    rospy.logerr("Robot did not hear you \x1b[1;37;41m(speech failed)\x1b[0m")
 
 
 class Api(object):
@@ -60,8 +74,10 @@ class Api(object):
         if state != GoalStatus.SUCCEEDED:
             if state == GoalStatus.PREEMPTED:
                 # Timeout
+                _print_timeout()
                 raise TimeoutException("Goal did not succeed within the time limit")
             else:
+                _print_generic_failure()
                 raise Exception("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
         return self._client.get_result()
@@ -76,14 +92,10 @@ class Api(object):
         self._send_query(description, spec, choices)
         answer = self._wait_for_result_and_get(timeout=timeout)
 
-        self.last_talker_id = answer.talker_id # Keep track of the last talker_id
+        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
-        rospy.logdebug('Answer: %s', answer)
-        result = resultFromROS(answer)
-
-        rospy.loginfo('Result: %s', result)
-
-        return result
+        _print_answer(answer)
+        return resultFromROS(answer)
 
     def query_raw(self, description, spec, timeout=10):
         '''
@@ -97,11 +109,8 @@ class Api(object):
 
         self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
-        rospy.logdebug('Answer: %s', answer)
-        result = answer.raw_result
-        rospy.loginfo('Result: %s', result)
-
-        return result
+        _print_answer(answer)
+        return answer.raw_result
 
     def old_query(self, spec, choices, timeout=10):
         '''
@@ -117,18 +126,17 @@ class Api(object):
             return GetSpeechResponse(result="")
         except:
             return None
+        else:
+            # so we've got an answer
+            self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
+            _print_answer(answer)
 
-        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
+            # convert it to the old message
+            choices = resultFromROS(answer)
+            result = GetSpeechResponse(result=answer.raw_result)
+            result.choices = choices
 
-        rospy.logdebug('Answer: %s', answer)
-        choices = resultFromROS(answer)
-
-        result = GetSpeechResponse(result=answer.raw_result)
-        result.choices = choices
-
-        rospy.loginfo('Result: %s', result)
-
-        return result
+            return result
 
     def set_description(self, description):
         pass
