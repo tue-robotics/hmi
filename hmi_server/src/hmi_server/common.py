@@ -31,7 +31,7 @@ def random_fold_spec(spec, choices):
             value = random.choice(values)
             results[choice] = value
         else:
-            rospy.logwarn('No values for choice "%s" in spec "%s"', choice.id, spec)
+            rospy.logwarn('No values for choice "%s" in spec "%s"', choice, spec)
 
     # Parse the groups in the ending result :)
     return fill_spec_with_results(spec, results)
