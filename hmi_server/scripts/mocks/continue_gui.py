@@ -282,7 +282,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
                 # post-process the given text
 
                 filtered_text = self._current_text
-                num_ands = filtered_text.count("and")
+                num_ands = filtered_text.count(" and ")
                 if num_ands > 1:
                     filtered_text = filtered_text.replace(" and", "", num_ands - 1)
 
