@@ -174,7 +174,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         self._choices = choices
         self._is_preempt_requested = is_preempt_requested
 
-        if self._choices:
+        if len(self._spec) < 200:
             self._mode = GuiMode.SIMPLE_QUESTION
             self._simple_question_index = 0
             self._results_dict = {}
