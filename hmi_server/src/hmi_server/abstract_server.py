@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 
 import rospy
 from actionlib import SimpleActionServer
-from hmi_msgs.msg import QueryAction, QueryResult, Result, QueryGoal, QueryActionFeedback, Choice
+from hmi_msgs.msg import QueryAction, QueryResult, QueryGoal, QueryActionFeedback
 from hmi_server.common import trim_string
 
 

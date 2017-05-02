@@ -1,16 +1,15 @@
 # Request
 
 string      description # for visualization of the query
-string      spec
-Choice[]    choices
+string      grammar # Grammar as specified in the grammar_parser package (https://github.com/tue-robotics/grammar_parser)
 
 ---
 
 # Result
 
 string      talker_id # id of the server that created the response
-string      raw_result # If you want to do the parsing yourself
-Result[]    results
+string      sentence # heard sentence string
+string      semantics # json dictionary of the semantics
 
 ---
 

@@ -6,12 +6,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-add_message_files(
-  FILES
-    Choice.msg
-    Result.msg
-)
-
 add_action_files(
   FILES
     Query.action
