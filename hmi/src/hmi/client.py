@@ -3,10 +3,9 @@ from collections import namedtuple
 
 import rospy
 from actionlib import SimpleActionClient, GoalStatus
-from dragonfly_speech_recognition.srv import GetSpeechResponse
-from hmi.common import random_fold_spec, result_from_ros
+from hmi.common import random_sentence, result_from_ros, verify_grammar
 from hmi_msgs.msg import QueryAction, QueryGoal
-from grammar_parser.cfgparser import CFGParser
+
 
 class TimeoutException(Exception):
     pass
@@ -98,10 +97,10 @@ class Client(object):
         """
         rospy.loginfo('Question: %s, grammar: %s', description, _truncate(grammar))
 
-        grammar_parser = CFGParser.fromstring(grammar)
-        grammar_parser.verify()
+        # Verify the incoming grammar
+        verify_grammar(grammar, target)
 
-        _print_example(grammar_parser.get_random_sentence(target))
+        _print_example(random_sentence(grammar, target))
 
         self._send_query(description, grammar, target)
         answer = self._wait_for_result_and_get(timeout=timeout)
@@ -119,7 +118,7 @@ class Client(object):
         rospy.loginfo('spec: %s', _truncate(spec))
 
         # convert old spec to new spec
-        grammar = 'T -> ' + spec
+        grammar = 'T -> ' + spec.lower()
         for choice, values in choices.items():
             grammar = grammar.replace('<%s>' % choice, choice.upper())
             for value in values:
