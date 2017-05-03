@@ -24,7 +24,7 @@ hmi = Client(server)
 try:
     if not query:
         hmi.query(description='Do you want an apple or a banana?',
-                  grammar='T -> I would like a (banana|apple)', target="T")
+                  grammar='T[true] -> i would like a (banana|apple)', target="T")
     else:
         hmi.query(description='', grammar='T -> %s' % query, target="T")
 except TimeoutException:
