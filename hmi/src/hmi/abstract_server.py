@@ -6,81 +6,12 @@ from abc import ABCMeta, abstractmethod
 import rospy
 from actionlib import SimpleActionServer
 from hmi_msgs.msg import QueryAction, QueryResult, QueryGoal, QueryActionFeedback
-from hmi_server.common import trim_string
+from .common import trim_string
 
-
-def queryToROS(description, spec, choices):
-    '''Convert a query call to a ROS message'''
-
-    # convert the dict to an array of Choices
-    choices = [Choice(id=choice,values=values) for (choice, values) in choices.items()]
-    return QueryGoal(description, spec, choices)
-
-
-# TODO: this belongs in HMIResult
-def resultFromROS(answer):
-    '''Convert a ROS result to Python result'''
-
-    # convert the array of Choices back to a dict
-    result = {}
-    for choice in answer.results:
-        if choice.id in result:
-            rospy.logwarn('duplicate key "%s" in answer', choice.id)
-        else:
-            result[choice.id] = choice.value
-    return result
-
-
-class HMIResult(object):
-
-    def __init__(self, raw_result='', results=None):
-        '''
-        raw_result is a optional string
-        results is an optional dict
-        '''
-        self.results = results if results else {}
-        self.raw_result = raw_result
-
-    def to_ros(self, talker_id=""):
-        results = [Result(id=choice,value=value) for (choice, value) in self.results.items()]
-        return QueryResult(results=results, raw_result=self.raw_result, talker_id=talker_id)
-
-    def from_ros(self):
-        raise NotImplementedError()
-
-    def __repr__(self):
-        return "%s(raw_result=%r, results=%r)" % (self.__class__.__name__, self.raw_result, self.results)
 
 class AbstractHMIServer(object):
     """
-    Abstract base class for a hmi client
-
-    >>> class HMIServer(AbstractHMIServer):
-    ...     def __init__(self):
-    ...         pass
-    ...     def _determine_answer(self, description, spec, choices):
-    ...         return QueryResult()
-    ...     def _set_succeeded(self, result):
-    ...         print result
-
-    >>> server = HMIServer()
-
-    >>> from hmi_msgs.msg import QueryGoal
-    >>> goal = QueryGoal(description='q', spec='spec', choices=[])
-
-    >>> server._execute_cb(goal)
-    raw_result: ''
-    results: []
-
-    >>> class HMIServer(AbstractHMIServer):
-    ...     def __init__(self):
-    ...         pass
-
-
-    >>> server = HMIServer()
-    Traceback (most recent call last):
-    ...
-    TypeError: Can't instantiate abstract class HMIServer with abstract methods _determine_answer
+    Abstract base class for a hmi servers
 
     """
     __metaclass__ = ABCMeta

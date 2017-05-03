@@ -3,8 +3,7 @@ import rospy
 from actionlib import SimpleActionClient, GoalStatus
 from dragonfly_speech_recognition.srv import GetSpeechResponse
 from hmi_msgs.msg import QueryAction
-from hmi_server.abstract_server import queryToROS, resultFromROS
-from hmi_server.common import random_fold_spec
+from hmi.common import random_fold_spec
 
 
 class TimeoutException(Exception):
@@ -33,7 +32,7 @@ def _print_generic_failure():
     rospy.logerr("Robot did not hear you \x1b[1;37;41m(speech failed)\x1b[0m")
 
 
-class Api(object):
+class Client(object):
     def __init__(self, name):
         '''
         Wrap the actionlib interface with the API
