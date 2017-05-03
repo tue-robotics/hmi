@@ -1,8 +1,25 @@
 #!/usr/bin/env python
+import json
 import random
 import re
+from collections import namedtuple
 
 import rospy
+from hmi_msgs.msg import QueryResult
+
+HMIResult = namedtuple('HMIResult', ['sentence', 'semantics'])
+
+
+def result_to_ros(result):
+    return QueryResult(
+        talker_id='',
+        sentence=result.sentence,
+        semantics=json.dumps(result.semantics)
+    )
+
+
+def result_from_ros(msg):
+    return HMIResult(sentence=msg.sentence, semantics=json.loads(msg.semantics))
 
 
 def trim_string(data, max_length=75, ellipsis='...'):
@@ -21,6 +38,9 @@ def random_fold_spec(spec, choices):
     Returns:
         'My name is john'
     """
+
+    raise NotImplementedError()
+
     # first resolve all options
     spec = random_fold_options(spec)
 

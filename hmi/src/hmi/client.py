@@ -1,27 +1,33 @@
 #!/usr/bin/env python
+from collections import namedtuple
+
 import rospy
 from actionlib import SimpleActionClient, GoalStatus
 from dragonfly_speech_recognition.srv import GetSpeechResponse
-from hmi_msgs.msg import QueryAction
-from hmi.common import random_fold_spec
+from hmi.common import random_fold_spec, result_from_ros
+from hmi_msgs.msg import QueryAction, QueryGoal
 
 
 class TimeoutException(Exception):
     pass
 
 
+OldSpeechResponse = namedtuple('OldSpeechResponse', ['result'])
+
+
 def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
 
 
-def _print_example(spec, choices):
-    # Copy request
-    spec = random_fold_spec(spec, choices)
-    rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(spec.strip()))
+def _print_example(grammar, target):
+    # TODO: Reimplement random_fold_spec with the grammar parser
+    return
+    grammar = random_fold_spec(grammar, target)
+    rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(grammar.strip()))
 
 
-def _print_answer(answer):
-    rospy.loginfo("Robot heard \x1b[1;42m'{}'\x1b[0m {}".format(answer.raw_result, resultFromROS(answer)))
+def _print_result(result):
+    rospy.loginfo("Robot heard \x1b[1;42m'{}'\x1b[0m {}".format(result.sentence, result.semantics))
 
 
 def _print_timeout():
@@ -34,18 +40,18 @@ def _print_generic_failure():
 
 class Client(object):
     def __init__(self, name):
-        '''
+        """
         Wrap the actionlib interface with the API
-        '''
+        """
         self._client = SimpleActionClient(name, QueryAction)
         rospy.loginfo('waiting for "%s" server', name)
         self._client.wait_for_server()
         self._feedback = False
         self.last_talker_id = ""
 
-    def _send_query(self, description, spec, choices):
-        goal = queryToROS(description, spec, choices)
-        state = self._client.send_goal(goal, feedback_cb=self._feedback_callback)
+    def _send_query(self, description, grammar, target):
+        goal = QueryGoal(description=description, grammar=grammar, target=target)
+        self._client.send_goal(goal, feedback_cb=self._feedback_callback)
 
     def _feedback_callback(self, feedback):
         rospy.loginfo("Received feedback")
@@ -81,40 +87,26 @@ class Client(object):
 
         return self._client.get_result()
 
-    def query(self, description, spec, choices, timeout=10):
-        '''
+    def query(self, description, grammar, target, timeout=10):
+        """
         Perform a HMI query, returns a dict of {choicename: value}
-        '''
-        rospy.loginfo('Question: %s, spec: %s', description, _truncate(spec))
-        _print_example(spec, choices)
+        """
+        rospy.loginfo('Question: %s, spec: %s', description, _truncate(grammar))
+        _print_example(grammar, target)
 
-        self._send_query(description, spec, choices)
+        self._send_query(description, grammar, target)
         answer = self._wait_for_result_and_get(timeout=timeout)
 
         self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
-        _print_answer(answer)
-        return resultFromROS(answer)
-
-    def query_raw(self, description, spec, timeout=10):
-        '''
-        Perform a HMI query without choices, returns a string
-        '''
-        rospy.loginfo('Question: %s, spec: %s', description, _truncate(spec))
-        _print_example(spec, {})
-
-        self._send_query(description, spec, {})
-        answer = self._wait_for_result_and_get(timeout=timeout)
-
-        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
-
-        _print_answer(answer)
-        return answer.raw_result
+        result = result_from_ros(answer)
+        _print_result(answer)
+        return
 
     def old_query(self, spec, choices, timeout=10):
-        '''
+        """
         Convert old queryies to a HMI query
-        '''
+        """
         rospy.loginfo('spec: %s', _truncate(spec))
         _print_example(spec, choices)
 
@@ -136,12 +128,3 @@ class Client(object):
             result.choices = choices
 
             return result
-
-    def set_description(self, description):
-        pass
-
-    def set_grammar(self, spec):
-        pass
-
-    def wait_for_grammar_set(self, spec):
-        pass
