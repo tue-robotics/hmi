@@ -10,6 +10,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <run_depend>grammar_parser</run_depend>
   <run_depend>actionlib</run_depend>
   <run_depend>hmi_msgs</run_depend>
   <run_depend>rospy</run_depend>

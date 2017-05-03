@@ -6,7 +6,7 @@ from actionlib import SimpleActionClient, GoalStatus
 from dragonfly_speech_recognition.srv import GetSpeechResponse
 from hmi.common import random_fold_spec, result_from_ros
 from hmi_msgs.msg import QueryAction, QueryGoal
-
+from grammar_parser.cfgparser import CFGParser
 
 class TimeoutException(Exception):
     pass
@@ -19,11 +19,8 @@ def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
 
 
-def _print_example(grammar, target):
-    # TODO: Reimplement random_fold_spec with the grammar parser
-    return
-    grammar = random_fold_spec(grammar, target)
-    rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(grammar.strip()))
+def _print_example(sentence):
+    rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(sentence))
 
 
 def _print_result(result):
@@ -100,7 +97,11 @@ class Client(object):
         Perform a HMI query, returns a HMIResult
         """
         rospy.loginfo('Question: %s, grammar: %s', description, _truncate(grammar))
-        _print_example(grammar, target)
+
+        grammar_parser = CFGParser.fromstring(grammar)
+        grammar_parser.verify()
+
+        _print_example(grammar_parser.get_random_sentence(target))
 
         self._send_query(description, grammar, target)
         answer = self._wait_for_result_and_get(timeout=timeout)
