@@ -12,7 +12,7 @@ class TimeoutException(Exception):
     pass
 
 
-OldSpeechResponse = namedtuple('OldSpeechResponse', ['result'])
+OldSpeechResponse = namedtuple('OldSpeechResponse', ['result', 'choices'])
 
 
 def _truncate(data):
@@ -39,19 +39,23 @@ def _print_generic_failure():
 
 
 class Client(object):
-    def __init__(self, name):
+    def __init__(self, name=None, simple_action_client=None):
         """
         Wrap the actionlib interface with the API
         """
-        self._client = SimpleActionClient(name, QueryAction)
-        rospy.loginfo('waiting for "%s" server', name)
-        self._client.wait_for_server()
+
+        if not (bool(name) ^ bool(simple_action_client)):
+            raise ValueError('name or simple_action_client should be set, but not both')
+
+        if simple_action_client:
+            self._client = simple_action_client
+        else:
+            self._client = SimpleActionClient(name, QueryAction)
+            rospy.loginfo('waiting for "%s" server', name)
+            self._client.wait_for_server()
+
         self._feedback = False
         self.last_talker_id = ""
-
-    def _send_query(self, description, grammar, target):
-        goal = QueryGoal(description=description, grammar=grammar, target=target)
-        self._client.send_goal(goal, feedback_cb=self._feedback_callback)
 
     def _feedback_callback(self, feedback):
         rospy.loginfo("Received feedback")
@@ -87,9 +91,13 @@ class Client(object):
 
         return self._client.get_result()
 
+    def _send_query(self, description, grammar, target):
+        goal = QueryGoal(description=description, grammar=grammar, target=target)
+        self._client.send_goal(goal, feedback_cb=self._feedback_callback)
+
     def query(self, description, grammar, target, timeout=10):
         """
-        Perform a HMI query, returns a dict of {choicename: value}
+        Perform a HMI query, returns a HMIResult
         """
         rospy.loginfo('Question: %s, spec: %s', description, _truncate(grammar))
         _print_example(grammar, target)
@@ -105,12 +113,22 @@ class Client(object):
 
     def old_query(self, spec, choices, timeout=10):
         """
-        Convert old queryies to a HMI query
+        Convert old queries to a HMI query
         """
         rospy.loginfo('spec: %s', _truncate(spec))
-        _print_example(spec, choices)
 
-        self._send_query('', spec, choices)
+        # convert old spec to new spec
+        grammar = 'T -> ' + spec
+        for choice, values in choices.items():
+            grammar = grammar.replace('<%s>' % choice, choice.upper())
+            for value in values:
+                grammar += '; %s[%s]' % (choice.upper(), value)
+
+        target = 'T'
+
+        _print_example(grammar, target)
+
+        self._send_query('', grammar, target)
         try:
             answer = self._wait_for_result_and_get(timeout=timeout)
         except TimeoutException:
@@ -120,11 +138,7 @@ class Client(object):
         else:
             # so we've got an answer
             self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
-            _print_answer(answer)
+            _print_result(answer)
 
-            # convert it to the old message
-            choices = resultFromROS(answer)
-            result = GetSpeechResponse(result=answer.raw_result)
-            result.choices = choices
-
-            return result
+            # TODO: convert semantics to choices
+            return OldSpeechResponse(result=answer.sentence, choices={})

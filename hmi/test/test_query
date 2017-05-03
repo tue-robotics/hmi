@@ -13,7 +13,7 @@ args = rospy.myargv(argv=sys.argv)
 # parse the args
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--server', nargs='?', default='hmi', help='Actionlib server')
-parser.add_argument('query', nargs='?', help='Actionlib server')
+parser.add_argument('query', nargs='?', default='apple|banana', help='Actionlib server')
 
 args = parser.parse_args(args[1:])
 server = args.server
@@ -22,10 +22,6 @@ query = args.query
 # do the query
 hmi = Client(server)
 try:
-    if not query:
-        hmi.query(description='Do you want an apple or a banana?',
-                  grammar='T[true] -> i would like a (banana|apple)', target="T")
-    else:
-        hmi.query(description='', grammar='T -> %s' % query, target="T")
+    hmi.query(description='', grammar='T -> %s' % query, target="T")
 except TimeoutException:
     pass
