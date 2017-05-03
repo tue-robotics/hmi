@@ -12,7 +12,7 @@ from python_qt_binding import QtGui
 from python_qt_binding import QtCore
 
 # TU/e
-from hmi_server.abstract_server import HMIResult, AbstractHMIServer
+from hmi.abstract_server import HMIResult, AbstractHMIServer
 
 from cfgparser import CFGParser
 
