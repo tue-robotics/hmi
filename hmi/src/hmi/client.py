@@ -99,7 +99,7 @@ class Client(object):
         """
         Perform a HMI query, returns a HMIResult
         """
-        rospy.loginfo('Question: %s, spec: %s', description, _truncate(grammar))
+        rospy.loginfo('Question: %s, grammar: %s', description, _truncate(grammar))
         _print_example(grammar, target)
 
         self._send_query(description, grammar, target)
@@ -108,8 +108,8 @@ class Client(object):
         self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
         result = result_from_ros(answer)
-        _print_result(answer)
-        return
+        _print_result(result)
+        return result
 
     def old_query(self, spec, choices, timeout=10):
         """
@@ -122,23 +122,25 @@ class Client(object):
         for choice, values in choices.items():
             grammar = grammar.replace('<%s>' % choice, choice.upper())
             for value in values:
-                grammar += '; %s[%s]' % (choice.upper(), value)
+                grammar += '; %s[{%s: %s}] -> %s' % (choice.upper(), choice, value, value)
 
         target = 'T'
 
+        rospy.loginfo('grammar: %s', _truncate(grammar))
         _print_example(grammar, target)
 
         self._send_query('', grammar, target)
         try:
             answer = self._wait_for_result_and_get(timeout=timeout)
         except TimeoutException:
-            return GetSpeechResponse(result="")
+            return OldSpeechResponse(result="")
         except:
             return None
         else:
             # so we've got an answer
             self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
-            _print_result(answer)
 
-            # TODO: convert semantics to choices
-            return OldSpeechResponse(result=answer.sentence, choices={})
+            result = result_from_ros(answer)
+            _print_result(result)
+
+            return OldSpeechResponse(result=result.sentence, choices=result.semantics)
