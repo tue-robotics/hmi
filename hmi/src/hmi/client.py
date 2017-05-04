@@ -127,7 +127,7 @@ class Client(object):
         target = 'T'
 
         rospy.loginfo('grammar: %s', _truncate(grammar))
-        _print_example(grammar, target)
+        _print_example(random_sentence(grammar, target))
 
         self._send_query('', grammar, target)
         try:
