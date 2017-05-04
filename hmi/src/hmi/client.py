@@ -11,9 +11,6 @@ class TimeoutException(Exception):
     pass
 
 
-OldSpeechResponse = namedtuple('OldSpeechResponse', ['result', 'choices'])
-
-
 def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
 
@@ -110,37 +107,3 @@ class Client(object):
         result = result_from_ros(answer)
         _print_result(result)
         return result
-
-    def old_query(self, spec, choices, timeout=10):
-        """
-        Convert old queries to a HMI query
-        """
-        rospy.loginfo('spec: %s', _truncate(spec))
-
-        # convert old spec to new spec
-        grammar = 'T -> ' + spec.lower()
-        for choice, values in choices.items():
-            grammar = grammar.replace('<%s>' % choice, choice.upper())
-            for value in values:
-                grammar += '; %s[{%s: %s}] -> %s' % (choice.upper(), choice, value, value)
-
-        target = 'T'
-
-        rospy.loginfo('grammar: %s', _truncate(grammar))
-        _print_example(random_sentence(grammar, target))
-
-        self._send_query('', grammar, target)
-        try:
-            answer = self._wait_for_result_and_get(timeout=timeout)
-        except TimeoutException:
-            return OldSpeechResponse(result="")
-        except:
-            return None
-        else:
-            # so we've got an answer
-            self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
-
-            result = result_from_ros(answer)
-            _print_result(result)
-
-            return OldSpeechResponse(result=result.sentence, choices=result.semantics)
