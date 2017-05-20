@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+import argparse
+import sys
+import os
+
+import rospy
+from hmi import Client, TimeoutException
+
+
+def read_valid_file(p, arg):
+    if not os.path.exists(arg):
+        p.error("The file %s does not exist!" % arg)
+    else:
+        return open(arg, 'r').read()
+
+# start the node
+rospy.init_node('test_query', anonymous=True)
+args = rospy.myargv(argv=sys.argv)
+
+# parse the args
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', '--server', nargs='?', default='hmi', help='Actionlib server')
+parser.add_argument("--grammar", type=str)
+parser.add_argument("--grammar-file", type=lambda x: read_valid_file(parser, x))
+parser.add_argument("target", type=str)
+
+args = parser.parse_args(args[1:])
+
+# Verify the specified grammar
+if (args.grammar_file and args.grammar) or (args.grammar_file is None and args.grammar is None):
+    parser.error("Please specify either a grammar string using --grammar of a grammar file using --grammar-file")
+grammar = args.grammar_file if args.grammar_file else args.grammar
+
+# do the query
+hmi = Client(args.server)
+try:
+    hmi.query(description='', grammar=grammar, target=args.target)
+except TimeoutException:
+    pass

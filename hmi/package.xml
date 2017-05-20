@@ -4,16 +4,15 @@
   <version>0.0.0</version>
   <description>The hmi package</description>
 
-  <maintainer email="ramon@todo.todo">ramon</maintainer>
+  <maintainer email="rayman747@hotmail.com">Ramon Wijnands</maintainer>
 
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <run_depend>grammar_parser</run_depend>
+  <run_depend>actionlib</run_depend>
   <run_depend>hmi_msgs</run_depend>
-  <run_depend>hmi_server</run_depend>
+  <run_depend>rospy</run_depend>
 
-  <export>
-    <metapackage/>
-  </export>
 </package>
