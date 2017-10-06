@@ -59,7 +59,7 @@ class AbstractHMIServer(object):
         return self._server.is_preempt_requested()
 
     @abstractmethod
-    def _determine_answer(self, description, spec, choices, is_preempt_requested):
+    def _determine_answer(self, description, grammar, target, is_preempt_requested):
         """
         Overwrite this method to provide custom implementations
 
