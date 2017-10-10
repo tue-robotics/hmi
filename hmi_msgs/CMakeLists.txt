@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_action_files(
   FILES
     Query.action
+    Cast.action
 )
 
 generate_messages(
