@@ -1,3 +1,6 @@
+# The Cast action can be used to give feedback to the robot's user. Servers can implement giving feedback using speech,
+# text on a screen, animations, lights, etc.
+
 # Request
 
 # Emotions as supported by Philips TTS:
@@ -21,6 +24,7 @@ int32   emotion=0   # Emotion of the message
 ---
 
 # Result
+# An empty result may be given when the server is done giving the requested feedback to the user.
 
 ---
 
