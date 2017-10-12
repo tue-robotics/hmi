@@ -57,6 +57,22 @@ import yaml
 from yaml import MarkedYAMLError
 
 
+class Alternative:
+    def __init__(self, values=[]):
+        self.values = values
+
+    def __repr__(self):
+        return "Alternative({})".format(self.values)
+
+
+class Sequence:
+    def __init__(self, values=[]):
+        self.values = values
+
+    def __repr__(self):
+        return "Sequence({})".format(self.values)
+
+
 class Option:
     """An option is a continuation of a sentence of where there are multiple ways to continue the sentence.
     These choices in an Option are called called conjuncts."""
@@ -241,9 +257,9 @@ class GrammarParser:
         if target is None:
             # Try whether all rules in the grammar are valid
             for r in self.rules:
-                self.get_unwrapped(r)
+                self.get_tree(r)
         else:
-            self.get_unwrapped(target)
+            self.get_tree(target)
         return True
 
     def add_rule(self, s):
@@ -335,93 +351,61 @@ class GrammarParser:
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-    def next_word(self, target, words):
-        if target not in self.rules:
-            return False
-
-        rule = self.rules[target]
-
-        next_words = []
-        for opt in rule.options:
-            next_words += self._next_word((Tree(opt), 0), words)
-
-        return next_words
-
-    def _next_word(self, TIdx, words):
-        (T, idx) = TIdx
-
-        if not T:
-            return []
-
-        conj = T.option.conjuncts[idx]
-
-        if conj.is_variable:
-            if not conj.name in self.rules:
-                return []
-            options = self.rules[conj.name].options
-
-        elif conj.name[0] == "$":
-            func_name = conj.name[1:]
-            if not self.has_completion_function(func_name):
-                return False
-            options = self.get_completion_function(func_name)(words)
-
-        else:
-            if words:
-                return [conj.name]
-            elif conj.name == words[0]:
-                return self._next_word(T.next(idx), words[1:])
-            else:
-                return []
-
-        next_words = []
-        for opt in options:
-            subtree = T.add_subtree(idx, Tree(opt))
-            next_words += self._next_word((subtree, 0), words)
-
-        return next_words
-
-    def has_completion_function(self, func_name):
-        return func_name in self.functions
-
-    def get_completion_function(self, func_name):
-        return self.functions[func_name]
-
-    def get_unwrapped(self, lname):
+    def get_tree(self, lname):
         if lname not in self.rules:
             raise Exception("Target {} not present in grammar rules".format(lname))
 
         rule = self.rules[lname]
 
-        opt_strings = []
+        alternative_values = []
         for opt in rule.options:
-            conj_strings = []
+            sequence_values = []
 
             for conj in opt.conjuncts:
-
                 if conj.is_variable:
-                    unwrapped_string = self.get_unwrapped(conj.name)
-                    if unwrapped_string:
-                        conj_strings.append(unwrapped_string)
+                    tree = self.get_tree(conj.name)
+                    if tree:
+                        sequence_values.append(tree)
                 else:
-                    conj_strings.append(conj.name)
+                    sequence_values.append(conj.name)
 
-            opt_strings.append(" ".join(conj_strings))
+            alternative_values.append(Sequence(sequence_values))
 
-        s = "|".join(opt_strings)
+        return Alternative(alternative_values)
 
-        if len(opt_strings) > 1:
-            s = "(" + s + ")"
+    @staticmethod
+    def _get_random_sentence_from_tree_and_delete_leaf_node(node):
+        """
 
-        return s
+        :param node:
+        :return: List of strings
+        """
+        string_list = ""
+        if isinstance(node, Alternative):
+            string_list += GrammarParser._get_random_sentence_from_tree_and_delete_leaf_node(random.choice(node.values))
+        elif isinstance(node, Sequence):
+            for value in node.values:
+                string_list += GrammarParser._get_random_sentence_from_tree_and_delete_leaf_node(value)
+        elif isinstance(node, str):
+            string_list += node + " "
+        return string_list
+
+    # @staticmethod
+    # def _get_random_sentence_from_tree_and_delete_leaf_node(tree):
+    #     str_list = []
+    #
+    #     subtree = tree
+    #     while subtree:
+    #         if isinstance(subtree, Alternative):
+    #             subtree = random.choice(subtree)
+    #         elif isinstance(subtree, Sequence):
+    #             for value in subtree.values:
+    #
+
+    def get_random_sentences(self, lname, num):
+        tree = self.get_tree(lname)
+
+        return [self._get_random_sentence_from_tree_and_delete_leaf_node(tree)]
 
     def get_random_sentence(self, lname):
-        unwrapped = self.get_unwrapped(lname)
-
-        spec = "(%s)" % unwrapped
-        while re.search('\([^)]+\)', spec):
-            options = re.findall('\([^()]+\)', spec)
-            for option in options:
-                spec = spec.replace(option, random.choice(option[1:-1].split("|")), 1)
-
-        return spec
+        return self.get_random_sentences(lname, 1)[0]

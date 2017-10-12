@@ -1,0 +1,9 @@
+ROOT[X] -> go T[X]
+T[{'outcome': 'get', 'entity': Y}] -> get the GET_ENTITIES[Y]
+T[{'outcome': 'put', 'entity': Y}] -> put the PUT_ENTITIES[Y]
+
+GET_ENTITIES['coke'] -> coke
+GET_ENTITIES['fanta'] -> fanta
+
+PUT_ENTITIES['coffee'] -> coffee
+PUT_ENTITIES['cookie'] -> cookie
