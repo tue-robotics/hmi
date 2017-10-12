@@ -8,7 +8,7 @@ import rospy
 from hmi_msgs.msg import QueryResult
 
 HMIResult = namedtuple('HMIResult', ['sentence', 'semantics'])
-from grammar_parser.cfgparser import CFGParser
+from hmi.grammar_parser import GrammarParser
 
 
 def result_to_ros(result):
@@ -29,16 +29,16 @@ def trim_string(data, max_length=75, ellipsis='...'):
 
 
 def verify_grammar(grammar, target=None):
-    grammar_parser = CFGParser.fromstring(grammar)
+    grammar_parser = GrammarParser.fromstring(grammar)
     grammar_parser.verify(target)
 
 
 def random_sentence(grammar, target):
-    grammar_parser = CFGParser.fromstring(grammar)
+    grammar_parser = GrammarParser.fromstring(grammar)
     grammar_parser.verify()
     return grammar_parser.get_random_sentence(target)
 
 
 def parse_sentence(sentence, grammar, target):
-    grammar_parser = CFGParser.fromstring(grammar)
+    grammar_parser = GrammarParser.fromstring(grammar)
     return grammar_parser.parse(target, sentence)

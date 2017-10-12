@@ -47,7 +47,7 @@ This returns a string. However, this string represents a (nested) dictionary tha
 
 Semantics describe what a sentence means. In this case, it describes what action to perform and with what to perform it.
 
-The semantics are returned to whomever called CFGParser.parse(...), usually the REPL on console.py.
+The semantics are returned to whomever called GrammarParser.parse(...), usually the REPL on console.py.
 The REPL sends the semantics to the action_server, which grounds the semantics by implementing the actions.
 """
 
@@ -293,7 +293,7 @@ def parse_next_atom(s):
 # ----------------------------------------------------------------------------------------------------
 
 
-class CFGParser:
+class GrammarParser:
     def __init__(self):
         self.rules = {}
         self.functions = {}
@@ -302,11 +302,11 @@ class CFGParser:
     def fromfile(filename):
         with open(filename) as f:
             string = f.read()
-        return CFGParser.fromstring(string)
+        return GrammarParser.fromstring(string)
 
     @staticmethod
     def fromstring(string):
-        parser = CFGParser()
+        parser = GrammarParser()
         for line in string.replace(";", "\n").split("\n"):
             line = line.strip()
             if line == "" or line[0] == '#':
@@ -468,7 +468,7 @@ class CFGParser:
         return self.functions[func_name]
 
     def graphviz_id(self):
-        return "CFGParser"
+        return "GrammarParser"
 
     def to_graphviz(self, graph):
         for name, rule in self.rules.iteritems():
@@ -538,7 +538,7 @@ class CFGParser:
 
 class Visualizer(object):
     def __init__(self, grammarfile):
-        self.parser = CFGParser.fromfile(grammarfile)
+        self.parser = GrammarParser.fromfile(grammarfile)
 
     def get_completion_function(self, name):
         return lambda x: [Option(name, [Conjunct(name.upper())])]
