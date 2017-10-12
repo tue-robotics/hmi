@@ -51,10 +51,10 @@ This returns a string. However, this string represents a (nested) dictionary tha
 Semantics describe what a sentence means. In this case, it describes what action to perform and with what to perform it.
 """
 
-import random
 import re
 import yaml
 from yaml import MarkedYAMLError
+import itertools
 
 
 class Alternative:
@@ -374,20 +374,31 @@ class GrammarParser:
         return Alternative(alternative_values)
 
     @staticmethod
-    def _get_random_sentence_from_tree_and_delete_leaf_node(node):
+    def _get_random_sentence_from_tree(node):
         """
 
         :param node:
         :return: List of strings
         """
-        string_list = ""
+        # print "\nNode: %s" % node
         if isinstance(node, Alternative):
-            string_list += GrammarParser._get_random_sentence_from_tree_and_delete_leaf_node(random.choice(node.values))
-        elif isinstance(node, Sequence):
+            string_list = []
             for value in node.values:
-                string_list += GrammarParser._get_random_sentence_from_tree_and_delete_leaf_node(value)
+                res = GrammarParser._get_random_sentence_from_tree(value)
+                string_list += res
+        elif isinstance(node, Sequence):
+            string_list = []
+            for value in node.values:
+                res = GrammarParser._get_random_sentence_from_tree(value)
+                # print "string_list = %s" % string_list
+                # print "res         = %s" % res
+                if string_list:
+                    string_list = ["".join(e) for e in itertools.product(string_list, res)]
+                else:
+                    string_list = res
+                # print "string_list = %s" % string_list
         elif isinstance(node, str):
-            string_list += node + " "
+            string_list = [node + " "]
         return string_list
 
     # @staticmethod
@@ -405,7 +416,7 @@ class GrammarParser:
     def get_random_sentences(self, lname, num):
         tree = self.get_tree(lname)
 
-        return [self._get_random_sentence_from_tree_and_delete_leaf_node(tree)]
+        return [self._get_random_sentence_from_tree(tree)]
 
     def get_random_sentence(self, lname):
         return self.get_random_sentences(lname, 1)[0]
