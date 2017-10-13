@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>hmi</name>
   <version>0.0.0</version>
   <description>The hmi package</description>
@@ -10,9 +10,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>grammar_parser</run_depend>
-  <run_depend>actionlib</run_depend>
-  <run_depend>hmi_msgs</run_depend>
-  <run_depend>rospy</run_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>hmi_msgs</exec_depend>
+  <exec_depend>rospy</exec_depend>
 
 </package>
