@@ -44,9 +44,9 @@ class Client(object):
             self._client = simple_action_client
         else:
             self._client = SimpleActionClient(name, QueryAction)
-            rospy.loginfo('Waiting for {} server'.format(name))
+            rospy.loginfo('Waiting for %s server', name)
             self._client.wait_for_server()
-            rospy.loginfo("Connected to {}".format(name))
+            rospy.loginfo("Connected to %s", name)
 
         self._feedback = False
         self.last_talker_id = ""
