@@ -10,11 +10,11 @@ wait_time = 1.0
 conversation = iter([
     "Amigo",
     # What can I do for you?
-    "Find john navigate to the dining table and pick up the bowl",
+    "Could you pinpoint jennifer grasp a tableware from the desk and bring it to me",
     # "I heard ... is this correct?"
     "Yes",
     # "I don't have enough info, ..."
-    "Kitchen",
+    "Bedroom",
     # "Is this correct?"
     "Yes",
     # "I don't have enough info ..."
@@ -47,6 +47,7 @@ class HMIServer(AbstractHMIServer):
                 return HMIResult(sentence, semantics)
             except StopIteration:
                 self.conversation_done = True
+
         else:
             rospy.logwarn("Conversation ended")
 

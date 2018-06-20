@@ -11,6 +11,10 @@ class TimeoutException(Exception):
     pass
 
 
+class GoalNotSucceededException(Exception):
+    pass
+
+
 def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
 
@@ -81,7 +85,7 @@ class Client(object):
                 raise TimeoutException("Goal did not succeed within the time limit")
             else:
                 _print_generic_failure()
-                raise Exception("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
+                raise GoalNotSucceededException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
         return self._client.get_result()
 
