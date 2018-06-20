@@ -7,7 +7,21 @@ from hmi.common import random_sentence, result_from_ros, parse_sentence
 
 wait_time = 0
 
-conversation = iter(["amigo", "find john find the object and say a joke", "yes", "kitchen", "yes", "apple", "yes"])
+conversation = iter([
+    "amigo",
+    # What can I do for you?
+    "find john navigate to the dining_table and pick up the bowl",
+    # "I heard ... is this correct?"
+    "yes",
+    # "I don't have enough info, ..."
+    "kitchen",
+    # "Is this correct?"
+    "yes",
+    # "I don't have enough info ..."
+    "bookcase",
+    # "Is this correct?"
+    "yes"
+    ])
 
 class HMIServer(AbstractHMIServer):
     def __init__(self, *args, **kwargs):
