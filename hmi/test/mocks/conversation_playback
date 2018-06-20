@@ -5,22 +5,22 @@ import rospy
 from hmi import AbstractHMIServer, HMIResult
 from hmi.common import random_sentence, result_from_ros, parse_sentence
 
-wait_time = 0
+wait_time = 1.0
 
 conversation = iter([
-    "amigo",
+    "Amigo",
     # What can I do for you?
-    "find john navigate to the dining_table and pick up the bowl",
+    "Find john navigate to the dining table and pick up the bowl",
     # "I heard ... is this correct?"
-    "yes",
+    "Yes",
     # "I don't have enough info, ..."
-    "kitchen",
+    "Kitchen",
     # "Is this correct?"
-    "yes",
+    "Yes",
     # "I don't have enough info ..."
-    "bookcase",
+    "Bookcase",
     # "Is this correct?"
-    "yes"
+    "Yes"
     ])
 
 class HMIServer(AbstractHMIServer):
