@@ -50,9 +50,10 @@ to multiple servers.
 The node that does this is the (incorrectly named maybe) 
 [`multi_client`](https://github.com/tue-robotics/hmi/blob/master/hmi/scripts/multi_client)
 
-When you pass it a goal, it tries to find all action server capable of answering questions 
-(i.e. it finds implementers of `QueryAction`)
-and then passes the same question to all of those. 
+When you pass it a goal, it tries to find all action server capable of answering questions. 
+It does this by findig implementers of `QueryAction` within the same ROS namespace as the `multiclient` itself. Eg. if multiclient offers its actions on `/robot/hmi`, then a specific server for some HMI modality may advertise its topics on `/robot/hmi/some_hmi_seerver` and the `multi_client` should find and use it.
+
+The `multi_client` then passes the same question to all of those. 
 
 When an answer is received from any one, the others are cancelled and 
 the first answer is replied back to the client.
