@@ -51,7 +51,10 @@ The node that does this is the (incorrectly named maybe)
 [`multi_client`](https://github.com/tue-robotics/hmi/blob/master/hmi/scripts/multi_client)
 
 When you pass it a goal, it tries to find all action server capable of answering questions. 
-It does this by findig implementers of `QueryAction` within the same ROS namespace as the `multiclient` itself. Eg. if multiclient offers its actions on `/robot/hmi`, then a specific server for some HMI modality may advertise its topics on `/robot/hmi/some_hmi_seerver` and the `multi_client` should find and use it.
+It does this by finding implementers of `QueryAction` within the same ROS namespace as the `multiclient` itself. Eg. if `multiclient` is launched in the `/robot`-namespace, it will add `hmi` and thus offer its actions on `/robot/hmi`. A specific server for some HMI modality can be launched in the `/robot/hmi`-namespace (e.g `/robot/hmi/some_hmi_server`) and the `multi_client` should find and use it.
+
+ it will take the current namespace and add `hmi`. Example:
+If the client is launched as `/robot/multiclient` it will check for servers in the `/robot/hmi` namespace.
 
 The `multi_client` then passes the same question to all of those. 
 
