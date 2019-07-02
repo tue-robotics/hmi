@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 import json
-import random
-import re
 from collections import namedtuple
 
-import rospy
 from hmi_msgs.msg import QueryResult
 
 HMIResult = namedtuple('HMIResult', ['sentence', 'semantics'])
