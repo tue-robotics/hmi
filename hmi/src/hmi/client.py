@@ -90,7 +90,7 @@ class Client(object):
             else:
                 _print_generic_failure()
                 self._last_result_stamp = rospy.Time.now()
-                raise GoalNotSucceededException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
+                raise TimeoutException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
         self._last_result_stamp = rospy.Time.now()
         return self._client.get_result()
