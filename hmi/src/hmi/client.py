@@ -120,10 +120,11 @@ class Client(object):
                 rospy.logwarn("Waiting for {} before sending query".format(delay))
                 rospy.sleep(delay)
 
-        self._send_query(description, grammar, target)
-        answer = self._wait_for_result_and_get(timeout=timeout)
+        # self._send_query(description, grammar, target)
+        # answer = self._wait_for_result_and_get(timeout=timeout)
+        answer = self._client.send_goal_and_wait(QueryGoal(description=description, grammar=grammar, target=target))
 
-        self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
+        # self.last_talker_id = answer.talker_id  # Keep track of the last talker_id
 
         result = result_from_ros(answer)
         _print_result(result)
