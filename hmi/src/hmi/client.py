@@ -6,8 +6,6 @@ from actionlib import SimpleActionClient, GoalStatus
 from hmi.common import random_sentence, result_from_ros, verify_grammar
 from hmi_msgs.msg import QueryAction, QueryGoal
 
-MIN_QUERY_SEPARATION = 1.0
-
 
 class TimeoutException(Exception):
     pass
@@ -56,7 +54,6 @@ class Client(object):
 
         self._feedback = False
         self.last_talker_id = ""
-        self._last_result_stamp = None
 
     def _feedback_callback(self, feedback):
         rospy.loginfo("Received feedback")
@@ -85,14 +82,11 @@ class Client(object):
             if state == GoalStatus.PREEMPTED:
                 # Timeout
                 _print_timeout()
-                self._last_result_stamp = rospy.Time.now()
                 raise TimeoutException("Goal did not succeed within the time limit")
             else:
                 _print_generic_failure()
-                self._last_result_stamp = rospy.Time.now()
                 raise TimeoutException("Goal did not succeed, it was: %s" % GoalStatus.to_string(state))
 
-        self._last_result_stamp = rospy.Time.now()
         return self._client.get_result()
 
     def _send_query(self, description, grammar, target):
@@ -109,16 +103,6 @@ class Client(object):
         verify_grammar(grammar, target)
 
         _print_example(random_sentence(grammar, target))
-
-        # Wait at least one second before a new request is sent
-        # N.B.: this is an 'hacky' probable fix for the infamous 'speech bug'. ToDo: don't use sleep but make nice.
-        stamp = rospy.Time.now()
-        if self._last_result_stamp is not None:
-            passed_time = (rospy.Time.now() - self._last_result_stamp).to_sec()
-            if passed_time < MIN_QUERY_SEPARATION:
-                delay = MIN_QUERY_SEPARATION - (stamp - self._last_result_stamp).to_sec()
-                rospy.logwarn("Waiting for {} before sending query".format(delay))
-                rospy.sleep(delay)
 
         self._send_query(description, grammar, target)
         answer = self._wait_for_result_and_get(timeout=timeout)
