@@ -11,10 +11,6 @@ class TimeoutException(Exception):
     pass
 
 
-class GoalNotSucceededException(Exception):
-    pass
-
-
 def _truncate(data):
     return (data[:75] + '..') if len(data) > 75 else data
 
