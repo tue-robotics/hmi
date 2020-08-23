@@ -1,0 +1,3 @@
+[submodule "hmi/docs"]
+	path = hmi/docs
+	url = https://github.com/tue-robotics/tue_documentation_python.git
