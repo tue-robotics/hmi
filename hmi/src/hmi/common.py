@@ -17,7 +17,7 @@ def result_to_ros(result):
 
 
 def result_from_ros(msg):
-    return HMIResult(sentence=msg.sentence, semantics=json.loads(msg.semantics))
+    return HMIResult(sentence=msg.sentence, semantics=str(json.loads(msg.semantics)))
 
 
 def trim_string(data, max_length=75, ellipsis='...'):
