@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import traceback
 from abc import ABCMeta, abstractmethod
+from six import add_metaclass
 
 import rospy
 from actionlib import SimpleActionServer
@@ -9,12 +10,12 @@ from hmi_msgs.msg import QueryAction, QueryActionFeedback
 from .common import trim_string, result_to_ros
 
 
+@add_metaclass(ABCMeta)
 class AbstractHMIServer(object):
     """
     Abstract base class for a hmi servers
 
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, name):
         self._server = SimpleActionServer(name, QueryAction,
