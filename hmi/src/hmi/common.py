@@ -5,7 +5,6 @@ from collections import namedtuple
 from hmi_msgs.msg import QueryResult
 
 HMIResult = namedtuple('HMIResult', ['sentence', 'semantics'])
-from grammar_parser.cfgparser import CFGParser
 
 
 def result_to_ros(result):
@@ -26,16 +25,12 @@ def trim_string(data, max_length=75, ellipsis='...'):
 
 
 def verify_grammar(grammar, target=None):
-    grammar_parser = CFGParser.fromstring(grammar)
-    grammar_parser.verify(target)
+    pass
 
 
 def random_sentence(grammar, target):
-    grammar_parser = CFGParser.fromstring(grammar)
-    grammar_parser.verify()
-    return grammar_parser.get_random_sentence(target)
+    return ""
 
 
 def parse_sentence(sentence, grammar, target):
-    grammar_parser = CFGParser.fromstring(grammar)
-    return grammar_parser.parse(target, sentence)
+    return ""

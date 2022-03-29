@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import traceback
 from abc import ABCMeta, abstractmethod
 from six import add_metaclass
