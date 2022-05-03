@@ -12,5 +12,5 @@ catkin_package()
 #############
 
 if (CATKIN_ENABLE_TESTING)
-  catkin_add_nosetests(test/nose)
+  catkin_add_nosetests(test)
 endif()
