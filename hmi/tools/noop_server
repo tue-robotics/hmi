@@ -10,10 +10,10 @@ from hmi import AbstractHMIServer, HMIResult
 
 class HMIServer(AbstractHMIServer):
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
-        return HMIResult('sentence', {})
+        return HMIResult("sentence", {})
 
 
-if __name__ == '__main__':
-    rospy.init_node('noop_server')
+if __name__ == "__main__":
+    rospy.init_node("noop_server")
     HMIServer(rospy.get_name())
     rospy.spin()
