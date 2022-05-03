@@ -12,15 +12,16 @@ def read_valid_file(p, arg):
     if not os.path.exists(arg):
         p.error("The file %s does not exist!" % arg)
     else:
-        return open(arg, 'r').read()
+        return open(arg, "r").read()
+
 
 # start the node
-rospy.init_node('test_query', anonymous=True)
+rospy.init_node("test_query", anonymous=True)
 args = rospy.myargv(argv=sys.argv)
 
 # parse the args
 parser = argparse.ArgumentParser()
-parser.add_argument('-s', '--server', nargs='?', default='hmi', help='Actionlib server')
+parser.add_argument("-s", "--server", nargs="?", default="hmi", help="Actionlib server")
 parser.add_argument("--grammar", type=str)
 parser.add_argument("--grammar-file", type=lambda x: read_valid_file(parser, x))
 parser.add_argument("target", type=str)
@@ -35,6 +36,6 @@ grammar = args.grammar_file if args.grammar_file else args.grammar
 # do the query
 hmi = Client(args.server)
 try:
-    hmi.query(description='', grammar=grammar, target=args.target)
+    hmi.query(description="", grammar=grammar, target=args.target)
 except TimeoutException:
     pass

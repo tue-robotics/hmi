@@ -8,6 +8,7 @@ from nose.tools import raises
 result_set = False
 aborted_set = False
 
+
 def test_valid_server():
     global result_set
     result_set = False

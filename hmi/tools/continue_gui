@@ -14,9 +14,10 @@ from python_qt_binding import QtCore
 # TU/e
 from hmi.abstract_server import HMIResult, AbstractHMIServer
 
-from cfgparser import CFGParser
+from grammar_parser.cfgparser import CFGParser
 
 # -----------------------------------------------------------------------------
+
 
 class UpdateThread(QtCore.QThread):
     """ Update thread """
@@ -33,7 +34,7 @@ class UpdateThread(QtCore.QThread):
         :param server: hmi server interface
         """
         super(UpdateThread, self).__init__()
-        print "Thread init"
+        print("Thread init")
         self._gui = gui
         self._server = server
 
@@ -47,7 +48,7 @@ class UpdateThread(QtCore.QThread):
 
     def run(self):
 
-        print "Thread.run"
+        print("Thread.run")
         r = rospy.Rate(5)
         while not rospy.is_shutdown():
             # question, buttons = self._server.update(self._current_text)
@@ -102,7 +103,7 @@ class GuiMode(object):
 
 class UpdateResult(object):
     """ Return value of the update function of the HMIServerGuiInterface """
-    def __init__(self, description="", spec="", key="", buttons=[], isvalid=False):
+    def __init__(self, description="", spec="", key="", buttons=None, isvalid=False):
         """ Constructor
 
         :param description: asked question ("Which <fruit> would you like")
@@ -111,6 +112,8 @@ class UpdateResult(object):
         :param buttons: possible buttons to click (["banana", "apple"])
         :param isvalid: bool indicating whether the current text is valid
         """
+        if buttons is None:
+            buttons = []
         self.description = description
         self.spec = spec
         self.key = key
@@ -181,7 +184,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         else:
             self._mode = GuiMode.USE_GRAMMAR
 
-        print "Received HMI request"
+        print("Received HMI request")
         r = rospy.Rate(5.0)
         while self._mode != GuiMode.RESULT_PENDING:  # and not is_preempt_requested()
             if is_preempt_requested() or rospy.is_shutdown():
@@ -191,7 +194,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
         self._mode = GuiMode.IDLE
 
-        print "Yeah, we're done, result: {0}".format(self._results_dict)
+        print("Yeah, we're done, result: {0}".format(self._results_dict))
         return self._result
 
     def _get_word_options(self, words):
@@ -237,7 +240,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         :param current_text: current text of the GUI textbox
         :param submit: bool indicating whether the submit button has been pressed
         :return: tuple with a question (optionally) and a list with the possible words. If the list is empty,
-        there is no current goal any more
+        there is no current goal anymore
         """
 
         if self._latest_text is not current_text:
@@ -250,7 +253,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
         # If simple question: check if answered
         if self._mode == GuiMode.SIMPLE_QUESTION:
-            k = self._choices.keys()[self._simple_question_index]
+            k = list(self._choices.keys())[self._simple_question_index]
             v = self._choices[k]
 
             if submit:
@@ -288,7 +291,6 @@ class HMIServerGUIInterface(AbstractHMIServer):
 
                 filtered_text = filtered_text.replace("bookcase", "bocase")
                 filtered_text = filtered_text.replace("_", " ")
-
 
                 self._result = HMIResult(filtered_text)  # The stored value is returned to make sure the
                 # text did not change between the check and clicking the 'Submit' button
@@ -420,7 +422,7 @@ class ContinueGui(QtGui.QWidget):
         self.show()
 
     def _clear_clicked(self):
-        print "bla"
+        print("bla")
 
     def _text_changed(self):
         """ Callback function if text in the textbox has changed. Gets the text and emits
@@ -430,31 +432,40 @@ class ContinueGui(QtGui.QWidget):
         self.current_text.emit(text)
 
     def description_callback(self, text):
-        """ Puts the provided text in the label
+        """
+        Puts the provided text in the label
+
         :param text: string with text
         """
         self.description_label.setText(text)
 
     def key_callback(self, text):
-        """ Puts the provided text in the label
+        """
+        Puts the provided text in the label
+
         :param text: string with text
         """
         self.key_label.setText(text)
 
     def spec_callback(self, text):
-        """ Puts the provided text in the label
+        """
+        Puts the provided text in the label
+
         :param text: string with text
         """
         self.spec_label.setText(text)
 
     def valid_callback(self, valid):
-        """ Sets the 'Submit' button to enabled/disabled based on the valid
+        """
+        Sets the 'Submit' button to enabled/disabled based on the valid
+
         :param valid: bool whether this is valid
         """
         self.submit_button.setEnabled(valid)
 
     def add_to_textbox(self, text):
-        """ Adds the text to the textbox, taking spaces into account
+        """
+        Adds the text to the textbox, taking spaces into account
 
         :param text: text to add
         :return:
@@ -466,7 +477,9 @@ class ContinueGui(QtGui.QWidget):
             self.textbox.insertPlainText(" "+text)
 
     def buttons_callback(self, buttons):
-        """ PyQt slot for buttons to add. Buttons are always cleared beforehand
+        """
+        PyQt slot for buttons to add. Buttons are always cleared beforehand
+
         :param buttons: QString containing the text of the buttons to add, separated by ';'
         """
         # Start by clearing
@@ -500,7 +513,9 @@ class ContinueGui(QtGui.QWidget):
         rospy.loginfo("Adding buttons took {0} seconds".format((rospy.Time.now() - start).to_sec()))
 
     def add_button(self, text, row, col):
-        """ Adds a button with an option to the GUI
+        """
+        Adds a button with an option to the GUI
+
         :param text: text of the button to add
         :param row: row where to add the button
         :param col: column where to add the button
@@ -540,13 +555,12 @@ class ContinueGui(QtGui.QWidget):
 
 
 if __name__ == '__main__':
-
     rospy.init_node('continue_gui', anonymous=True)
 
     app = QtGui.QApplication(sys.argv)
     timer = QtCore.QTimer()
     timer.start(500)
-    timer.timeout.connect(lambda: None) # wake up python every now and again
+    timer.timeout.connect(lambda: None)  # wake up python every now and again
 
     # also close Qt when a Ctrl+C is pressed
     def handleIntSignal(signum, frame):
@@ -560,6 +574,5 @@ if __name__ == '__main__':
         grammar_filename = None
 
     w = ContinueGui(grammar_filename=grammar_filename)
-    #w = ContinueGui()
 
     sys.exit(app.exec_())
