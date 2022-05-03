@@ -3,25 +3,28 @@ import random
 
 import rospy
 from hmi import AbstractHMIServer, HMIResult
-from hmi.common import random_sentence, result_from_ros, parse_sentence
+from hmi.common import parse_sentence
 
 wait_time = 1.0
 
-conversation = iter([
-    "Amigo",
-    # What can I do for you?
-    "Could you pinpoint jennifer grasp a tableware from the desk and bring it to me",
-    # "I heard ... is this correct?"
-    "Yes",
-    # "I don't have enough info, ..."
-    "Bedroom",
-    # "Is this correct?"
-    "Yes",
-    # "I don't have enough info ..."
-    "Bookcase",
-    # "Is this correct?"
-    "Yes"
-    ])
+conversation = iter(
+    [
+        "Amigo",
+        # What can I do for you?
+        "Could you pinpoint jennifer grasp a tableware from the desk and bring it to me",
+        # "I heard ... is this correct?"
+        "Yes",
+        # "I don't have enough info, ..."
+        "Bedroom",
+        # "Is this correct?"
+        "Yes",
+        # "I don't have enough info ..."
+        "Bookcase",
+        # "Is this correct?"
+        "Yes",
+    ]
+)
+
 
 class HMIServer(AbstractHMIServer):
     def __init__(self, *args, **kwargs):
@@ -29,11 +32,13 @@ class HMIServer(AbstractHMIServer):
         self.conversation_done = False
 
     def _determine_answer(self, description, grammar, target, is_preempt_requested):
-        rospy.loginfo('Waiting for %d seconds', wait_time)
+        rospy.loginfo("Waiting for %d seconds", wait_time)
         start = rospy.Time.now()
-        while rospy.Time.now() - start < rospy.Duration(wait_time) \
-            and not is_preempt_requested() \
-            and not rospy.is_shutdown():
+        while (
+            rospy.Time.now() - start < rospy.Duration(wait_time)
+            and not is_preempt_requested()
+            and not rospy.is_shutdown()
+        ):
             rospy.sleep(0.1)
 
         if not self.conversation_done:
@@ -52,7 +57,7 @@ class HMIServer(AbstractHMIServer):
             rospy.logwarn("Conversation ended")
 
 
-if __name__ == '__main__':
-    rospy.init_node('conversation_playback')
+if __name__ == "__main__":
+    rospy.init_node("conversation_playback")
     HMIServer(rospy.get_name())
     rospy.spin()
