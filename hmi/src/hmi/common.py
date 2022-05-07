@@ -1,11 +1,19 @@
-#!/usr/bin/env python
-import json
-from collections import namedtuple
+from typing import Mapping
 
+import json
+from dataclasses import astuple, dataclass
+
+from grammar_parser.cfgparser import CFGParser
 from hmi_msgs.msg import QueryResult
 
-HMIResult = namedtuple('HMIResult', ['sentence', 'semantics'])
-from grammar_parser.cfgparser import CFGParser
+
+@dataclass(frozen=True)
+class HMIResult:
+    sentence: str
+    semantics: Mapping
+
+    def __iter__(self):
+        return iter(astuple(self))
 
 
 def result_to_ros(result):
