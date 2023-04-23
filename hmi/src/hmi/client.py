@@ -1,38 +1,35 @@
-#!/usr/bin/env python
-from collections import namedtuple
-
 import rospy
 from actionlib import SimpleActionClient, GoalStatus
-from hmi.common import random_sentence, result_from_ros, verify_grammar
-from hmi_msgs.msg import QueryAction, QueryGoal
+from hmi.common import HMIResult, random_sentence, result_from_ros, verify_grammar
+from hmi_msgs.msg import QueryAction, QueryGoal, QueryResult
 
 
 class TimeoutException(Exception):
     pass
 
 
-def _truncate(data):
+def _truncate(data: str) -> str:
     return (data[:75] + '..') if len(data) > 75 else data
 
 
-def _print_example(sentence):
+def _print_example(sentence) -> None:
     rospy.loginfo("Example: \x1b[1;44m'{}'\x1b[0m".format(sentence))
 
 
-def _print_result(result):
+def _print_result(result) -> None:
     rospy.loginfo("Robot heard \x1b[1;42m'{}'\x1b[0m {}".format(result.sentence, result.semantics))
 
 
-def _print_timeout():
+def _print_timeout() -> None:
     rospy.loginfo("Robot did not hear you \x1b[1;43m(timeout)\x1b[0m")
 
 
-def _print_generic_failure():
+def _print_generic_failure() -> None:
     rospy.logerr("Robot did not hear you \x1b[1;37;41m(speech failed)\x1b[0m")
 
 
-class Client(object):
-    def __init__(self, name=None, simple_action_client=None):
+class Client:
+    def __init__(self, name: str = None, simple_action_client=None):
         """
         Wrap the actionlib interface with the API
         """
@@ -51,11 +48,11 @@ class Client(object):
         self._feedback = False
         self.last_talker_id = ""
 
-    def _feedback_callback(self, feedback):
+    def _feedback_callback(self, feedback) -> None:
         rospy.loginfo("Received feedback")
         self._feedback = True
 
-    def _wait_for_result_and_get(self, timeout=None):
+    def _wait_for_result_and_get(self, timeout=None) -> QueryResult:
         execute_timeout = rospy.Duration(timeout) if timeout else rospy.Duration(10)
         preempt_timeout = rospy.Duration(1)
 
@@ -89,7 +86,7 @@ class Client(object):
         goal = QueryGoal(description=description, grammar=grammar, target=target)
         self._client.send_goal(goal, feedback_cb=self._feedback_callback)
 
-    def query(self, description, grammar, target, timeout=10):
+    def query(self, description: str, grammar: str, target: str, timeout: float = 10) -> HMIResult:
         """
         Perform a HMI query, returns a HMIResult
         """

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from typing import Callable
+
 import rospy
 from hmi import AbstractHMIServer, HMIResult
 from hmi.common import parse_sentence
@@ -10,14 +12,16 @@ class StringTopicServer(AbstractHMIServer):
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
-        self._string = None
+        self._string: str = None
         self._string_sub = rospy.Subscriber("string", String, self._string_callback, queue_size=1)
         rospy.loginfo("StringTopicServer: subscribed to %s", self._string_sub.name)
 
-    def _string_callback(self, msg):
+    def _string_callback(self, msg: String):
         self._string = msg.data
 
-    def _determine_answer(self, description, grammar, target, is_preempt_requested):
+    def _determine_answer(
+            self, description: str, grammar: str, target: str, is_preempt_requested: Callable
+    ) -> HMIResult:
         self._string = None
         while not rospy.is_shutdown() and not is_preempt_requested() and not self._string:
             rospy.sleep(.1)

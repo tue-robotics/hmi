@@ -1,4 +1,6 @@
-#!/usr/bin/python
+#! /usr/bin/python
+
+from typing import Callable, Mapping
 
 import sys
 import math
@@ -163,7 +165,7 @@ class HMIServerGUIInterface(AbstractHMIServer):
         # To check if we need to publish feedback
         self._latest_text = ""
 
-    def _determine_answer(self, description, spec, choices, is_preempt_requested):
+    def _determine_answer(self, description: str, spec: str, choices: Mapping, is_preempt_requested: Callable):
         """
         Sets some members and blocks until we can either an answer is created
         or the goal is cancelled

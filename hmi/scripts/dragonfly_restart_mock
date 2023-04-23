@@ -1,18 +1,20 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
+
 import rospy
 from std_srvs.srv import Empty
 
 
-class dragonfly_restart_mock:
+class DragonFlyRestartMock:
     def __init__(self):
-        rospy.loginfo('starting the restart mock')
-        self.restart_srv = rospy.Service('~restart_node', Empty, self.restart)
+        rospy.loginfo("starting the restart mock")
+        self.restart_srv = rospy.Service("~restart_node", Empty, self.restart)
 
-    def restart(self, data):
+    @staticmethod
+    def restart(_):
         return {}
 
-if __name__ == '__main__':
-    rospy.init_node('dragonfly_restart_mock')
-    node = dragonfly_restart_mock()
-    rospy.spin()
 
+if __name__ == "__main__":
+    rospy.init_node("dragonfly_restart_mock")
+    node = DragonFlyRestartMock()
+    rospy.spin()

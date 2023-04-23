@@ -93,7 +93,8 @@ class MultiClient(object):
         else:
             self.server.set_aborted(result=None, text="No result")
 
-    def one_client_done(self, clients):
+    @staticmethod
+    def one_client_done(clients):
         active_clients = 0
 
         loop_period = rospy.Duration(0.1)

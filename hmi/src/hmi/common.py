@@ -16,7 +16,7 @@ class HMIResult:
         return iter(astuple(self))
 
 
-def result_to_ros(result):
+def result_to_ros(result: HMIResult) -> QueryResult:
     return QueryResult(
         talker_id='',
         sentence=result.sentence,
@@ -24,26 +24,26 @@ def result_to_ros(result):
     )
 
 
-def result_from_ros(msg):
+def result_from_ros(msg: QueryResult) -> HMIResult:
     return HMIResult(sentence=msg.sentence, semantics=json.loads(msg.semantics))
 
 
-def trim_string(data, max_length=75, ellipsis='...'):
-    l = max_length - len(ellipsis)
-    return (data[:l] + ellipsis) if len(data) > l else data
+def trim_string(data: str, max_length: int = 75, ellipsis: str = "...") -> str:
+    cutoff_length = max_length - len(ellipsis)
+    return (data[:cutoff_length] + ellipsis) if len(data) > cutoff_length else data
 
 
-def verify_grammar(grammar, target=None):
+def verify_grammar(grammar: str, target=None):
     grammar_parser = CFGParser.fromstring(grammar)
     grammar_parser.verify(target)
 
 
-def random_sentence(grammar, target):
+def random_sentence(grammar: str, target: str) -> str:
     grammar_parser = CFGParser.fromstring(grammar)
     grammar_parser.verify()
     return grammar_parser.get_random_sentence(target)
 
 
-def parse_sentence(sentence, grammar, target):
+def parse_sentence(sentence: str, grammar: str, target: str) -> Mapping:
     grammar_parser = CFGParser.fromstring(grammar)
     return grammar_parser.parse(target, sentence)
