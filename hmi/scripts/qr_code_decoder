@@ -6,6 +6,7 @@ import rospy
 from hmi import AbstractHMIServer, HMIResult
 from hmi.common import parse_sentence
 import cv2
+from cv_bridge import CvBridge
 from sensor_msgs.msg import CompressedImage
 from pyzbar.pyzbar import decode as qr_decode
 
@@ -37,7 +38,7 @@ class QRCodeDecode(AbstractHMIServer):
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # Image
-        self._image_topic = "image"
+        self._image_topic = "/hero/head_rgbd_sensor/rgb/image_raw/compressed"
         self._image = None
         self._image_format = None
 
@@ -46,12 +47,14 @@ class QRCodeDecode(AbstractHMIServer):
 
         self.tries = 5
 
+        self._cv_bridge = CvBridge()
+
         self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
         rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
 
     def _image_callback(self, msg: CompressedImage) -> None:
-        self._image = msg.data
-        self._image_format = msg.format
+        self._image = self._cv_bridge.compressed_imgmsg_to_cv2(msg)
+        # self._image_format = msg.format
 
     def _determine_answer(
         self, description: str, grammar: str, target: str, is_preempt_requested: Callable
@@ -75,7 +78,8 @@ class QRCodeDecode(AbstractHMIServer):
         valid_qr = False
 
         for _ in range(self.tries):
-            gray_img = cv2.imdecode(self._image, cv2.IMREAD_GRAYSCALE)
+            # gray_img = cv2.imdecode(self._image, cv2.IMREAD_GRAYSCALE)
+            gray_img = self._image
             qr = qr_decode(gray_img)[0]
             valid_qr = validate_image(gray_img, qr.rect)
             if not valid_qr:
@@ -91,6 +95,6 @@ class QRCodeDecode(AbstractHMIServer):
 
 
 if __name__ == "__main__":
-    rospy.init_node("qr_code_decode")
+    rospy.init_node("/hero/hmi/qr_code_decode")
     QRCodeDecode(rospy.get_name())
     rospy.spin()
