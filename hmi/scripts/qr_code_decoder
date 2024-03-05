@@ -102,6 +102,6 @@ class QRCodeDecode(AbstractHMIServer):
 
 
 if __name__ == "__main__":
-    rospy.init_node("/hero/hmi/qr_code_decode")
+    rospy.init_node("qr_code_decode")
     QRCodeDecode(rospy.get_name())
     rospy.spin()
