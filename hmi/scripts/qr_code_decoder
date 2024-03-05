@@ -86,17 +86,19 @@ class QRCodeDecode(AbstractHMIServer):
             qr = None
 
             for qr_i in qr_list:
-                valid_qr = validate_image(gray_img, qr_i.rect)
-                if valid_qr:
-                    qr = qr_i
-                    break
+                # valid_qr = validate_image(gray_img, qr_i.rect)
+                # if valid_qr:
+                #     qr = qr_i
+                #     break
+                qr = qr_i
 
-            if not valid_qr:
-                # qr code does not occupy the required percentage of the screen
-                break
+            # if not valid_qr:
+            #     # qr code does not occupy the required percentage of the screen
+            #     break
             data_decoded.append(qr.data.decode("utf-8"))
 
-        if len(set(data_decoded)) == 1 and valid_qr:
+        # if len(set(data_decoded)) == 1 and valid_qr:
+        if len(set(data_decoded)) == 1:
             rospy.loginfo("QR code decoding successful.")
             self._qr_code_data = data_decoded[0]
         else:
