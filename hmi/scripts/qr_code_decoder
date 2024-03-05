@@ -80,8 +80,15 @@ class QRCodeDecode(AbstractHMIServer):
         for _ in range(self.tries):
             # gray_img = cv2.imdecode(self._image, cv2.IMREAD_GRAYSCALE)
             gray_img = self._image
-            qr = qr_decode(gray_img)[0]
-            valid_qr = validate_image(gray_img, qr.rect)
+            qr_list = qr_decode(gray_img)
+            qr = None
+
+            for qr_i in qr_list:
+                valid_qr = validate_image(gray_img, qr_i.rect)
+                if valid_qr:
+                    qr = qr_i
+                    break
+
             if not valid_qr:
                 # qr code does not occupy the required percentage of the screen
                 break
