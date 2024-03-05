@@ -59,18 +59,19 @@ class QRCodeDecode(AbstractHMIServer):
     def _determine_answer(
         self, description: str, grammar: str, target: str, is_preempt_requested: Callable
     ) -> HMIResult:
-
+        result = ""
         rospy.loginfo("Received image!")
 
         self.decode_qr_code()
 
         rospy.loginfo("QR code data: %s", self._qr_code_data)
-        semantics = parse_sentence(self._qr_code_data, grammar, target)
 
-        rospy.loginfo("Parsed semantics: %s", semantics)
+        if self._qr_code_data:
+            semantics = parse_sentence(self._qr_code_data, grammar, target)
 
-        result = HMIResult(self._qr_code_data, semantics)
-        self._string = None
+            rospy.loginfo("Parsed semantics: %s", semantics)
+
+            result = HMIResult(self._qr_code_data, semantics)
 
         return result
 
