@@ -19,6 +19,7 @@
   <depend>rospy</depend>
 
   <exec_depend>python3-inquirer-pip</exec_depend>
+  <exec_depend>python3-pyzbar-pip</exec_depend>
   <exec_depend>python3-six</exec_depend>
 
   <doc_depend>python3-sphinx</doc_depend>
