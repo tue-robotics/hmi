@@ -64,11 +64,12 @@ class QRCodeDecode(AbstractHMIServer):
 
         self.decode_qr_code()
 
-        semantics = parse_sentence(self._image, grammar, target)
+        rospy.loginfo("QR code data: %s", self._qr_code_data)
+        semantics = parse_sentence(self._qr_code_data, grammar, target)
 
         rospy.loginfo("Parsed semantics: %s", semantics)
 
-        result = HMIResult(self._image, semantics)
+        result = HMIResult(self._qr_code_data, semantics)
         self._string = None
 
         return result
