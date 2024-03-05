@@ -46,8 +46,6 @@ class QRCodeDecode(AbstractHMIServer):
 
         self.tries = 5
 
-        # ToDo: Check how much of the screen the qr code takes up (to not have false positives)
-
         self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
         rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
 
