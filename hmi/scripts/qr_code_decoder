@@ -22,14 +22,12 @@ def validate_image(qr_image, qr_code_rect, threshold_percentage=20) -> bool:
     # Calculate the percentage of the screen occupied by the QR code
     qr_code_percentage = (qr_code_area / total_image_area) * 100
 
-    rospy.loginfo(f"QR code occupies {qr_code_percentage:.2f}% of the screen.")
-
     # Check if the QR code occupies at least threshold_percentage of the screen
     if qr_code_percentage >= threshold_percentage:
+        rospy.loginfo(f"QR code occupies {qr_code_percentage:.2f}% of the screen.")
         return True
-    else:
-        rospy.logwarn("QR code does not occupy the required percentage of the screen.")
-        return False
+
+    return False
 
 
 class QRCodeDecode(AbstractHMIServer):
@@ -39,18 +37,15 @@ class QRCodeDecode(AbstractHMIServer):
         # Image
         self._image_topic = "/hero/head_rgbd_sensor/rgb/image_raw/compressed"
         self._image = None
-
-        # QR code data decoded from image
-        self._qr_code_data = None
-
-        self._cv_bridge = CvBridge()
-        self._tries = 5
-        self._results = []
-
         self._image_sub = None
 
+        self._cv_bridge = CvBridge()
+
+        self._tries = 5
+        self._results = []
+        self._qr_code_data = None
+
     def _image_callback(self, msg: CompressedImage) -> None:
-        rospy.loginfo("Received image!")
         self._image = self._cv_bridge.compressed_imgmsg_to_cv2(msg)
         result = self.decode_qr_code()
         if result:
@@ -65,24 +60,23 @@ class QRCodeDecode(AbstractHMIServer):
 
         result = HMIResult("", {})
 
-        rospy.loginfo("QR code data: %s", self._qr_code_data)
-
         while self._tries > 0:
             rospy.loginfo("Waiting for QR code data...")
             rospy.sleep(1)
             if is_preempt_requested():
                 return result
-            r = set(self._results)
-            if len(r) == 1:
-                self._qr_code_data = r.pop()
-                break
+
+        if len(set(self._results)) == 1:
+            self._qr_code_data = self._results[0]
 
         if self._qr_code_data:
+            rospy.loginfo("QR code data: %s", self._qr_code_data)
             semantics = parse_sentence(self._qr_code_data, grammar, target)
             rospy.loginfo("Parsed semantics: %s", semantics)
             result = HMIResult(self._qr_code_data, semantics)
 
         self._image_sub.unregister()
+        self.reset_server()
         return result
 
     def decode_qr_code(self) -> str:
@@ -100,6 +94,11 @@ class QRCodeDecode(AbstractHMIServer):
             return ""
 
         return qr.data.decode("utf-8")
+
+    def reset_server(self) -> None:
+        self._tries = 5
+        self._results = []
+        self._qr_code_data = None
 
 
 if __name__ == "__main__":
