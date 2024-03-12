@@ -76,6 +76,7 @@ class QRCodeDecode(AbstractHMIServer):
             result = HMIResult(self._qr_code_data, semantics)
 
         self._image_sub.unregister()
+        rospy.loginfo("QRCodeDecode: unsubscribed from %s", self._image_sub.name)
         self.reset_server()
         return result
 
