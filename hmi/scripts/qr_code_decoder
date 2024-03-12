@@ -47,8 +47,7 @@ class QRCodeDecode(AbstractHMIServer):
         self._tries = 5
         self._results = []
 
-        self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
-        rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
+        self._image_sub = None
 
     def _image_callback(self, msg: CompressedImage) -> None:
         rospy.loginfo("Received image!")
@@ -61,6 +60,9 @@ class QRCodeDecode(AbstractHMIServer):
     def _determine_answer(
         self, description: str, grammar: str, target: str, is_preempt_requested: Callable
     ) -> HMIResult:
+        self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
+        rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
+
         result = HMIResult("", {})
 
         rospy.loginfo("QR code data: %s", self._qr_code_data)
@@ -80,6 +82,7 @@ class QRCodeDecode(AbstractHMIServer):
             rospy.loginfo("Parsed semantics: %s", semantics)
             result = HMIResult(self._qr_code_data, semantics)
 
+        self._image_sub.unregister()
         return result
 
     def decode_qr_code(self) -> str:
