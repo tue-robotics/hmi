@@ -2,6 +2,8 @@
 
 from typing import Callable
 
+from numpy import ndarray
+
 import rospy
 from hmi import AbstractHMIServer, HMIResult
 from hmi.common import parse_sentence
@@ -10,7 +12,15 @@ from sensor_msgs.msg import CompressedImage
 from pyzbar.pyzbar import decode as qr_decode
 
 
-def validate_image(qr_image, qr_code_rect, threshold_percentage=20) -> bool:
+def validate_image(qr_image: ndarray, qr_code_rect: tuple, threshold_percentage: int = 20) -> bool:
+    """
+    Check if the QR code occupies at least threshold_percentage of the screen.
+
+    :param qr_image: The image containing the QR code.
+    :param qr_code_rect: Tuple containing the coordinates of the bounding box around the QR code.
+    :param threshold_percentage: The minimum percentage of the screen that the QR code should occupy.
+    """
+
     x, y, w, h = qr_code_rect  # Coordinates of the bounding box around the QR code
 
     # Calculate the area of the QR code
@@ -31,6 +41,10 @@ def validate_image(qr_image, qr_code_rect, threshold_percentage=20) -> bool:
 
 
 class QRCodeDecode(AbstractHMIServer):
+    """
+    QRCodeDecode class for decoding QR codes.
+    """
+
     def __init__(self, *args, **kwargs) -> None:
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -46,8 +60,11 @@ class QRCodeDecode(AbstractHMIServer):
         self._qr_code_data = None
 
     def _image_callback(self, msg: CompressedImage) -> None:
+        # Will be called every time a new image is received
         self._image = self._cv_bridge.compressed_imgmsg_to_cv2(msg)
         result = self.decode_qr_code()
+
+        # If we see a QR code
         if result:
             self._results.append(result)
             self._tries -= 1
@@ -55,17 +72,21 @@ class QRCodeDecode(AbstractHMIServer):
     def _determine_answer(
         self, description: str, grammar: str, target: str, is_preempt_requested: Callable
     ) -> HMIResult:
+
         self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
         rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
 
+        # Initialize
         result = HMIResult("", {})
 
+        # Waits for _image_callback to do the tries
         while self._tries > 0:
             rospy.loginfo("Waiting for QR code data...")
             rospy.sleep(1)
             if is_preempt_requested():
                 return result
 
+        # check if all results are the same
         if len(set(self._results)) == 1:
             self._qr_code_data = self._results[0]
 
@@ -80,9 +101,14 @@ class QRCodeDecode(AbstractHMIServer):
         return result
 
     def decode_qr_code(self) -> str:
-        qr_list = qr_decode(self._image)
+        """
+        Decode the QR code from the image.
+        """
+
+        qr_list = qr_decode(self._image)  # Gets all QR codes in the image
         qr = None
 
+        # Stores all QRs that occupy the required percentage of the screen
         for qr_i in qr_list:
             if validate_image(self._image, qr_i.rect):
                 qr = qr_i
@@ -96,6 +122,9 @@ class QRCodeDecode(AbstractHMIServer):
         return qr.data.decode("utf-8")
 
     def reset_server(self) -> None:
+        """
+        Re-initialize the server.
+        """
         self._tries = 5
         self._results = []
         self._qr_code_data = None
