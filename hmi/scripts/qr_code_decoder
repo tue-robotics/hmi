@@ -70,7 +70,11 @@ class QRCodeDecode(AbstractHMIServer):
             self._tries -= 1
 
     def _determine_answer(
-        self, description: str, grammar: str, target: str, is_preempt_requested: Callable
+        self,
+        description: str,
+        grammar: str,
+        target: str,
+        is_preempt_requested: Callable,
     ) -> HMIResult:
 
         self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
