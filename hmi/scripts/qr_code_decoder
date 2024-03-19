@@ -12,7 +12,9 @@ from sensor_msgs.msg import CompressedImage
 from pyzbar.pyzbar import decode as qr_decode
 
 
-def validate_image(qr_image: ndarray, qr_code_rect: tuple, threshold_percentage: int = 20) -> bool:
+def validate_image(
+    qr_image: ndarray, qr_code_rect: tuple, threshold_percentage: int = 20
+) -> bool:
     """
     Check if the QR code occupies at least threshold_percentage of the screen.
 
@@ -70,10 +72,16 @@ class QRCodeDecode(AbstractHMIServer):
             self._tries -= 1
 
     def _determine_answer(
-            self, description: str, grammar: str, target: str, is_preempt_requested: Callable
+        self,
+        description: str,
+        grammar: str,
+        target: str,
+        is_preempt_requested: Callable,
     ) -> HMIResult:
 
-        self._image_sub = rospy.Subscriber(self._image_topic, CompressedImage, self._image_callback, queue_size=1)
+        self._image_sub = rospy.Subscriber(
+            self._image_topic, CompressedImage, self._image_callback, queue_size=1
+        )
         rospy.loginfo("QRCodeDecode: subscribed to %s", self._image_sub.name)
 
         # Initialize
@@ -116,7 +124,9 @@ class QRCodeDecode(AbstractHMIServer):
 
         if not qr:
             # qr code does not occupy the required percentage of the screen
-            rospy.logwarn("QR code does not occupy the required percentage of the screen.")
+            rospy.logwarn(
+                "QR code does not occupy the required percentage of the screen."
+            )
             return ""
 
         return qr.data.decode("utf-8")
@@ -130,7 +140,7 @@ class QRCodeDecode(AbstractHMIServer):
         self._qr_code_data = None
 
 
-if __name__ == '__main__':
-    rospy.init_node('qr_code_decode')
+if __name__ == "__main__":
+    rospy.init_node("qr_code_decode")
     QRCodeDecode(rospy.get_name())
     rospy.spin()
