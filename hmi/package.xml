@@ -17,6 +17,7 @@
   <depend>actionlib</depend>
   <depend>hmi_msgs</depend>
   <depend>rospy</depend>
+  <depend>zbar</depend>
 
   <exec_depend>python3-inquirer-pip</exec_depend>
   <exec_depend>python3-pyzbar-pip</exec_depend>
