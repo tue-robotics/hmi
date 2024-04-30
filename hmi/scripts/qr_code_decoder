@@ -49,7 +49,7 @@ class QRCodeDecode(AbstractHMIServer):
         super(self.__class__, self).__init__(*args, **kwargs)
 
         # Image
-        self._image_topic = "head_rgbd_sensor/rgb/image_raw/compressed"
+        self._image_topic = "~image"
         self._image = None
         self._image_sub = None
 
