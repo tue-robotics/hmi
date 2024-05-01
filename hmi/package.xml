@@ -19,9 +19,12 @@
   <depend>rospy</depend>
   <depend>zbar</depend>
 
+  <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-inquirer-pip</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-pyzbar-pip</exec_depend>
   <exec_depend>python3-six</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
   <doc_depend>python3-sphinx</doc_depend>
   <doc_depend>python-sphinx-autoapi-pip</doc_depend>
