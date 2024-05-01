@@ -26,6 +26,8 @@
   <exec_depend>python3-six</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
 
+  <test_depend>catkin_lint_cmake</test_depend>
+
   <doc_depend>python3-sphinx</doc_depend>
   <doc_depend>python-sphinx-autoapi-pip</doc_depend>
   <doc_depend>python-sphinx-rtd-theme-pip</doc_depend>
