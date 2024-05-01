@@ -5,7 +5,7 @@
 <package format="3">
   <name>hmi</name>
   <version>0.0.0</version>
-  <description>The hmi package</description>
+  <description>Human-Machine interaction functionalities</description>
 
   <maintainer email="rayman747@hotmail.com">Ramon Wijnands</maintainer>
 
