@@ -45,8 +45,8 @@ class QRCodeDecode(AbstractHMIServer):
     QRCodeDecode class for decoding QR codes.
     """
 
-    def __init__(self, max_tries: int = 5, loop_rate: float = 1.0, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, name: str, max_tries: int = 5, loop_rate: float = 1.0, *args, **kwargs) -> None:
+        super().__init__(name, *args, **kwargs)
 
         # Image
         self._image_sub: Optional[rospy.Subscriber] = None
@@ -136,5 +136,5 @@ class QRCodeDecode(AbstractHMIServer):
 
 if __name__ == "__main__":
     rospy.init_node("qr_code_decode")
-    QRCodeDecode(rospy.get_name())
+    QRCodeDecode(name=rospy.get_name())
     rospy.spin()
