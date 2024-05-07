@@ -33,8 +33,8 @@ def validate_image(qr_image: ndarray, qr_code_rect: tuple, threshold_percentage:
     qr_code_percentage = (qr_code_area / total_image_area) * 100
 
     # Check if the QR code occupies at least threshold_percentage of the screen
+    rospy.loginfo(f"QR code occupies {qr_code_percentage:.2f}% of the screen.")
     if qr_code_percentage >= threshold_percentage:
-        rospy.loginfo(f"QR code occupies {qr_code_percentage:.2f}% of the screen.")
         return True
 
     return False
@@ -45,7 +45,9 @@ class QRCodeDecode(AbstractHMIServer):
     QRCodeDecode class for decoding QR codes.
     """
 
-    def __init__(self, name: str, max_tries: int = 5, loop_rate: float = 1.0, *args, **kwargs) -> None:
+    def __init__(
+        self, name: str, max_tries: int = 5, loop_rate: float = 1.0, percentage_threshold: int = 20, *args, **kwargs
+    ) -> None:
         super().__init__(name, *args, **kwargs)
 
         # Image
@@ -59,6 +61,7 @@ class QRCodeDecode(AbstractHMIServer):
         self._qr_code_data: Optional[str] = None
 
         self._loop_rate: float = loop_rate
+        self._percentage_threshold: int = percentage_threshold
 
     def _image_callback(self, msg: CompressedImage) -> None:
         # Will be called every time a new image is received
@@ -114,7 +117,7 @@ class QRCodeDecode(AbstractHMIServer):
 
         # Stores all QRs that occupy the required percentage of the screen
         for qr_i in qr_list:
-            if validate_image(image, qr_i.rect):
+            if validate_image(image, qr_i.rect, self._percentage_threshold):
                 qr = qr_i
                 break
 
