@@ -12,13 +12,12 @@ from sensor_msgs.msg import CompressedImage
 from pyzbar.pyzbar import Decoded, decode as qr_decode
 
 
-def validate_image(qr_image: ndarray, qr_code_rect: tuple, threshold_percentage: int = 20) -> bool:
+def calc_area_percentage(qr_image: ndarray, qr_code_rect: tuple) -> float:
     """
-    Check if the QR code occupies at least threshold_percentage of the screen.
+    Calculate the percentage of the screen occupied by the QR code.
 
     :param qr_image: The image containing the QR code.
     :param qr_code_rect: Tuple containing the coordinates of the bounding box around the QR code.
-    :param threshold_percentage: The minimum percentage of the screen that the QR code should occupy.
     """
 
     x, y, w, h = qr_code_rect  # Coordinates of the bounding box around the QR code
@@ -32,12 +31,31 @@ def validate_image(qr_image: ndarray, qr_code_rect: tuple, threshold_percentage:
     # Calculate the percentage of the screen occupied by the QR code
     qr_code_percentage = (qr_code_area / total_image_area) * 100
 
-    # Check if the QR code occupies at least threshold_percentage of the screen
-    rospy.loginfo(f"QR code occupies {qr_code_percentage:.2f}% of the screen.")
-    if qr_code_percentage >= threshold_percentage:
-        return True
+    return qr_code_percentage
 
-    return False
+
+def decode_qr_code(image: ndarray) -> str:
+    """
+    Decode the QR code from the image.
+
+    :param image: image to run qr decoding on
+    """
+
+    qr_list: List[Decoded] = qr_decode(image)  # Gets all QR codes in the image
+
+    # Stores all QRs that occupy the required percentage of the screen
+    qr_list_area_percentage = sorted([(calc_area_percentage(image, qr_i.rect), qr_i) for qr_i in qr_list], reverse=True)
+    rospy.logdebug(f"QR code area percentage(s): {[area_percentage for area_percentage, _ in qr_list_area_percentage]}")
+    if not qr_list_area_percentage:
+        # qr code does not occupy the required percentage of the screen
+        rospy.logdebug("No QR code found")
+        return ""
+
+    area_percentage, qr = qr_list_area_percentage[0]
+    qr_data = qr.data.decode("utf-8")
+    rospy.logdebug(f"Found QR code ({area_percentage}%): {qr_data}")
+
+    return qr.data.decode("utf-8")
 
 
 class QRCodeDecode(AbstractHMIServer):
@@ -45,33 +63,38 @@ class QRCodeDecode(AbstractHMIServer):
     QRCodeDecode class for decoding QR codes.
     """
 
-    def __init__(
-        self, name: str, max_tries: int = 5, loop_rate: float = 1.0, percentage_threshold: int = 20, *args, **kwargs
-    ) -> None:
+    def __init__(self, name: str, image_loop_rate: float = 2.0, loop_rate: float = 1.0, *args, **kwargs) -> None:
         super().__init__(name, *args, **kwargs)
+
+        if not image_loop_rate > 0:
+            raise ValueError("image_loop_rate must be greater than 0")
+        if not loop_rate > 0:
+            raise ValueError("loop_rate must be greater than 0")
 
         # Image
         self._image_sub: Optional[rospy.Subscriber] = None
 
         self._cv_bridge = CvBridge()
 
-        self._max_tries: int = max_tries
-        self._tries: int = 0
+        self._new_image_time_stamp_threshold: rospy.Time = rospy.Time.now()
+        self._image_time_stamp_difference: rospy.Duration = rospy.Duration(1.0 / image_loop_rate)
+        self._loop_rate: float = loop_rate
+
         self._results: List[str] = []
         self._qr_code_data: Optional[str] = None
 
-        self._loop_rate: float = loop_rate
-        self._percentage_threshold: int = percentage_threshold
-
     def _image_callback(self, msg: CompressedImage) -> None:
         # Will be called every time a new image is received
+        if msg.header.stamp < self._new_image_time_stamp_threshold:
+            return
+
+        self._new_image_time_stamp_threshold = msg.header.stamp + self._image_time_stamp_difference
         image = self._cv_bridge.compressed_imgmsg_to_cv2(msg)
-        result = self.decode_qr_code(image)
+        result = decode_qr_code(image)
 
         # If we see a QR code
         if result:
             self._results.append(result)
-            self._tries += 1
 
     def _determine_answer(
         self, description: str, grammar: str, target: str, is_preempt_requested: Callable
@@ -85,56 +108,35 @@ class QRCodeDecode(AbstractHMIServer):
 
         # Waits for _image_callback to do the tries
         r = rospy.Rate(self._loop_rate)
-        while not rospy.is_shutdown and not self._tries <= self._max_tries:
+        while not rospy.is_shutdown() and not self._results:
             rospy.logdebug("Waiting for QR code data...")
             r.sleep()
             if is_preempt_requested():
+                self.reset_server()
                 return result
 
         # check if all results are the same
-        if len(set(self._results)) == 1:
-            self._qr_code_data = self._results[0]
+        if num_results := len(set(self._results)) != 1:
+            rospy.logwarn(f"Found '{num_results}' codes detected")
+            self.reset_server()
+            return result
 
-        if self._qr_code_data:
-            self._image_sub.unregister()
-            rospy.loginfo(f"QR code data: {self._qr_code_data}")
-            semantics = parse_sentence(self._qr_code_data, grammar, target)
-            rospy.loginfo(f"Parsed semantics: {semantics}")
-            result = HMIResult(self._qr_code_data, semantics)
-
+        qr_code_data = self._results[0]
         self.reset_server()
+
+        rospy.loginfo(f"QR code data: {qr_code_data}")
+        semantics = parse_sentence(qr_code_data, grammar, target)
+        rospy.loginfo(f"Parsed semantics: {semantics}")
+        result = HMIResult(qr_code_data, semantics)
+
         return result
-
-    def decode_qr_code(self, image: ndarray) -> str:
-        """
-        Decode the QR code from the image.
-
-        :param image: image to run qr decoding on
-        """
-
-        qr_list: List[Decoded] = qr_decode(image)  # Gets all QR codes in the image
-        qr: Optional[Decoded] = None
-
-        # Stores all QRs that occupy the required percentage of the screen
-        for qr_i in qr_list:
-            if validate_image(image, qr_i.rect, self._percentage_threshold):
-                qr = qr_i
-                break
-
-        if not qr:
-            # qr code does not occupy the required percentage of the screen
-            rospy.logwarn("QR code does not occupy the required percentage of the screen.")
-            return ""
-
-        return qr.data.decode("utf-8")
 
     def reset_server(self) -> None:
         """
         Re-initialize the server.
         """
-        self._tries = 0
+        self._image_sub.unregister()
         self._results = []
-        self._qr_code_data = None
 
 
 if __name__ == "__main__":
