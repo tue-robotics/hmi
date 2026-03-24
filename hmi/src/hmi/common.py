@@ -2,10 +2,11 @@ from typing import Mapping
 
 import json
 from dataclasses import astuple, dataclass
+from rospy import loginfo 
 
 from grammar_parser.cfgparser import CFGParser
 from hmi_msgs.msg import QueryResult
-
+from ner_model.parser import NERParser
 
 @dataclass(frozen=True)
 class HMIResult:
@@ -45,5 +46,6 @@ def random_sentence(grammar: str, target: str) -> str:
 
 
 def parse_sentence(sentence: str, grammar: str, target: str) -> Mapping:
-    grammar_parser = CFGParser.fromstring(grammar)
-    return grammar_parser.parse(target, sentence)
+    loginfo(f"Parsing sentence: {sentence}")
+    ner_parser = NERParser.fromstring(grammar)
+    return ner_parser.parse(sentence)
