@@ -48,4 +48,4 @@ def random_sentence(grammar: str, target: str) -> str:
 def parse_sentence(sentence: str, grammar: str, target: str) -> Mapping:
     loginfo(f"Parsing sentence: {sentence}")
     ner_parser = NERParser.fromstring(grammar)
-    return ner_parser.parse(sentence)
+    return ner_parser.parse(target, sentence)
